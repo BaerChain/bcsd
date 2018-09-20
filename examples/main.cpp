@@ -1,6 +1,7 @@
 #include <appbase/application.hpp>
 #include <iostream>
 #include <boost/exception/diagnostic_information.hpp>
+#include <plugin_add.hpp>
 
 struct database { };
 
@@ -65,7 +66,8 @@ class net_plugin : public appbase::plugin<net_plugin>
 
 int main( int argc, char** argv ) {
    try {
-      appbase::app().register_plugin<net_plugin>();
+      appbase::app().register_plugin<plugin_add>();
+        appbase::app().register_plugin<chain_plugin>();
       if( !appbase::app().initialize( argc, argv ) )
          return -1;
       appbase::app().startup();

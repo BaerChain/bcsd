@@ -38,14 +38,18 @@ if(ENABLE_COVERAGE_TESTING)
     SET(CMAKE_CXX_FLAGS "--coverage ${CMAKE_CXX_FLAGS}")
 endif()
 
+
 add_library( appbase
              application.cpp
+             plugin_add.cpp
            )
+
+target_include_directories( appbase
+        PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include" "${CMAKE_CURRENT_SOURCE_DIR}" ${Boost_INCLUDE_DIR})
+
 
 target_link_libraries( appbase ${Boost_LIBRARIES})
 
-target_include_directories( appbase
-                            PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include" ${Boost_INCLUDE_DIR})
 
 INSTALL( TARGETS
    appbase
