@@ -3,6 +3,8 @@
 #include <boost/exception/diagnostic_information.hpp>
 #include <boost/filesystem.hpp>
 
+#define BLOCK_SIZE (1024 * 1024)
+
 namespace bpo = boost::program_options;
 namespace bfs = boost::filesystem;
 
