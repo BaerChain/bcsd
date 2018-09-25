@@ -25,8 +25,11 @@ class plugin_add : public appbase::plugin<plugin_add>
     void plugin_initialize( const variables_map& options );
     void plugin_startup();
     void plugin_shutdown();
+
+    int root_dir();
     int cut_block();
     int sha_file(bfs::fstream& fp, char res[]);
+    int sha_file_block(char buf[], char res[], int buf_size);
     
   private:
     int file_size;
