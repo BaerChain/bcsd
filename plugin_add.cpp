@@ -21,6 +21,10 @@ void plugin_add::plugin_initialize( const variables_map& options )
     std::cout << this->file_size << std::endl;
     // 打开文件，为后续操作准备
     file_stream.open(this->file_path, std::ios::in | std::ios::binary);
+    char re[65] = "";
+    sha_file(file_stream, re);
+    re[64] = '\0';
+    std::cout << std::endl << re << std::endl;
     cut_block();
 }
 
@@ -67,4 +71,25 @@ int plugin_add::cut_block()
         i++;
     }
     return i;
+}
+
+int plugin_add::sha_file(bfs::fstream& fp, char res[])
+{
+    unsigned char hash[SHA256_DIGEST_LENGTH] = "";
+    SHA256_CTX sha256;
+    SHA256_Init(&sha256);
+    char file_buf[BLOCK_SIZE] = "";
+    while(!fp.eof())
+    {
+        fp.read(file_buf, BLOCK_SIZE);
+        int read_size = fp.gcount();
+        SHA256_Update(&sha256, file_buf, read_size);
+    }
+    SHA256_Final(hash, &sha256);
+    int i = 0;
+    for(; i < 32; i++)
+    {
+        sprintf(&res[i*2], "%0x",  hash[i]);
+    }
+    return 0;
 }

@@ -44,11 +44,12 @@ add_library( appbase
              plugin_add.cpp
            )
 
+
 target_include_directories( appbase
         PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include" "${CMAKE_CURRENT_SOURCE_DIR}" ${Boost_INCLUDE_DIR})
 
 
-target_link_libraries( appbase ${Boost_LIBRARIES})
+target_link_libraries( appbase ${Boost_LIBRARIES} crypto jsoncpp)
 
 
 INSTALL( TARGETS

@@ -2,6 +2,8 @@
 #include <iostream>
 #include <boost/exception/diagnostic_information.hpp>
 #include <boost/filesystem.hpp>
+#include <jsoncpp/json/json.h>
+#include <openssl/sha.h>
 
 #define BLOCK_SIZE (1024 * 1024)
 
@@ -24,6 +26,7 @@ class plugin_add : public appbase::plugin<plugin_add>
     void plugin_startup();
     void plugin_shutdown();
     int cut_block();
+    int sha_file(bfs::fstream& fp, char res[]);
     
   private:
     int file_size;
