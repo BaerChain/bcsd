@@ -30,9 +30,11 @@ class plugin_add : public appbase::plugin<plugin_add>
     int cut_block();
     int sha_file(bfs::fstream& fp, char res[]);
     int sha_file_block(char buf[], char res[], int buf_size);
+    int sha_to_path(char sha_val[], char res[]);
     
   private:
     int file_size;
     bfs::path file_path;
     bfs::fstream file_stream;
+    bfs::path r_path;
 };
