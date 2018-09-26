@@ -37,4 +37,8 @@ class plugin_add : public appbase::plugin<plugin_add>
     bfs::path file_path;
     bfs::fstream file_stream;
     bfs::path r_path;
+    bfs::fstream json_file;
+    Json::Value node;
+    Json::FastWriter write_to_file;
+    Json::Value block;
 };
