@@ -87,7 +87,7 @@ int plugin_add::cut_block()
         sha_file_block(buf, res_hash, read_buf_size);
         res_hash[64] = '\0';
         std::cout << _block_name << " hash is :" << res_hash << std::endl;
-        char cur_path[80] = "";
+        char cur_path[81] = "";
         sha_to_path(res_hash, cur_path);
 
         // 把名字赋值给boost库的path类来管理
@@ -153,6 +153,12 @@ int plugin_add::sha_file_block(char buf[], char res[], int buf_size)
     return 0;
 }
 
+/***
+ * 把hash值拆成4个一组的包含目录，并创建这些目录结构，如果存在就跳过进入下一层
+ * @参数sha_val 需要用来建立目录的hash值，目前我们是64个字节，256位的
+ * @参数res 创建好以后的目录最后的路径
+ * @return < 0 表示计算失败
+ */
 int plugin_add::sha_to_path(char sha_val[], char res[])
 {
     int i = 0;
@@ -160,13 +166,17 @@ int plugin_add::sha_to_path(char sha_val[], char res[])
     r_path = "./L2";
     for(; i < 16; i++){
         bfs::path tmp = r_path;
+        // 把hash值四个四个一组拿出来
         strncpy(&res[i * (cut + 1)], &sha_val[i * cut], cut);
         res[(i + 1) * (cut + 1) - 1] = '/';
-        tmp /= res;
-        std::cout << "path is :" << tmp << std::endl;
-        /*if(!exsits(tmp)){
-            create_directory(tmp);
-        }*/
+        res[(i + 1) * (cut + 1)] = '\0';
+
+        tmp /= res; // 加上存储的根目录组成完整的路径
+        // std::cout << "path is :" << tmp << std::endl;
+        if(!bfs::exists(tmp)){  // 判断目录是否存在
+            // std::cout << "not exsits " << tmp << std::endl;
+            bfs::create_directory(tmp);
+        }
     }
     return 0;
 }
