@@ -103,7 +103,11 @@ int plugin_add::cut_block()
         char cur_path[80] = "";
         sha_to_path(res_hash, cur_path);
         // 把文件块按序号写入json
-        block[num_s] = res_hash;
+        Json::Value item;
+        item["num"] = i;
+        item["value"] = res_hash;
+        block.append(item);
+        //block[num_s] = res_hash;
 
         // 把名字赋值给boost库的path类来管理
         block_name = r_path;
