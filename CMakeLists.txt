@@ -42,6 +42,7 @@ endif()
 add_library( appbase
              application.cpp
              plugin_add.cpp
+             plugin_get.cpp
            )
 
 
