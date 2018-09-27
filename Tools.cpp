@@ -86,3 +86,20 @@ int Tools::sha_to_path(char sha_val[], char res[])
     }
     return 0;
 }
+
+/***
+ * 把一个文件写入到另一个文件
+ * @参数file_write 目标结果文件
+ * @参数file_read  源数据文件
+ * @return = 0 表示执行成功
+ */
+int Tools::file_to_file(bfs::fstream& file_write, bfs::fstream& file_read)
+{
+    while(!file_read.eof()) {
+        char buf[BLOCK_SIZE] = "";
+        file_read.read(buf, BLOCK_SIZE);
+        int real_read_size = file_read.gcount();
+        file_write.write(buf, real_read_size);
+    }
+    return 0;
+}

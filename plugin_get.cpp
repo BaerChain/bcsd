@@ -81,7 +81,28 @@ int plugin_get::store_file_into_path()
         }
         p_whole_file.close();
     } else {    //没有单个文件就去块里去拼
-        
+        unsigned int i = 0;
+        bfs::path block_path;
+        Json::Value block_array = node["block"];
+        std::cout << "block num is:" << block_array.size() << std::endl;
+        bfs::fstream target_file;
+        target_file.open(store_file_path, std::ios::binary | std::ios::out | std::ios::trunc);
+        assert(target_file.is_open());
+        for(; i < block_array.size(); i++) {
+            string block_hash = block_array[i]["value"].asString();
+            block_path = "./L2";
+            char block_hash_path[80] = "";
+            Tools::sha_to_path(const_cast<char *>(block_hash.c_str()), block_hash_path);
+            block_hash_path[79] = '\0';
+            block_path /= block_hash_path;
+            block_path /= block_hash;
+            bfs::fstream block_file;
+            block_file.open(block_path, std::ios::in | std::ios::binary);
+            Tools::file_to_file(target_file, block_file);
+            //target_file << block_file;
+            block_file.close();
+        }
+        target_file.close();
     }
     return 0;
 }

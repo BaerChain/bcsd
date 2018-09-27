@@ -19,4 +19,5 @@ namespace Tools {
     int sha_file(bfs::fstream& fp, char res[]);
     int sha_file_block(char buf[], char res[], int buf_size);
     int sha_to_path(char sha_val[], char res[]);
+    int file_to_file(bfs::fstream& file_wirte, bfs::fstream& file_read);
 }
