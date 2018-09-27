@@ -4,6 +4,7 @@
 #include <boost/filesystem.hpp>
 #include <jsoncpp/json/json.h>
 #include <openssl/sha.h>
+#include <Tools.hpp>
 
 #define BLOCK_SIZE (1024 * 1024)
 
@@ -28,9 +29,6 @@ class plugin_add : public appbase::plugin<plugin_add>
 
     int root_dir();
     int cut_block();
-    int sha_file(bfs::fstream& fp, char res[]);
-    int sha_file_block(char buf[], char res[], int buf_size);
-    int sha_to_path(char sha_val[], char res[]);
     
   private:
     int file_size;
