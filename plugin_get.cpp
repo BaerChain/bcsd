@@ -83,24 +83,42 @@ int plugin_get::store_file_into_path()
     } else {    //没有单个文件就去块里去拼
         unsigned int i = 0;
         bfs::path block_path;
+        // 获取到块数据的数组
         Json::Value block_array = node["block"];
-        std::cout << "block num is:" << block_array.size() << std::endl;
         bfs::fstream target_file;
+        // 打开目标文件，准备后续的写入
         target_file.open(store_file_path, std::ios::binary | std::ios::out | std::ios::trunc);
         assert(target_file.is_open());
+        
+        // 依次把每个块写入到目标文件
         for(; i < block_array.size(); i++) {
+
+            // 按照顺序获取每个块的hash值
             string block_hash = block_array[i]["value"].asString();
-            block_path = "./L2";
+            
+            // hash转路径
             char block_hash_path[80] = "";
             Tools::sha_to_path(const_cast<char *>(block_hash.c_str()), block_hash_path);
             block_hash_path[79] = '\0';
+            // 拼出块的路径
+            block_path = "./L2";
             block_path /= block_hash_path;
             block_path /= block_hash;
             bfs::fstream block_file;
+
+            // 打开块文件
             block_file.open(block_path, std::ios::in | std::ios::binary);
-            Tools::file_to_file(target_file, block_file);
-            //target_file << block_file;
-            block_file.close();
+            // 获取文件的hash比对存储的hash是否一致，不一致说明json或文件被篡改
+            char block_hash_res[65] = "";
+            Tools::sha_file(block_file, block_hash_res);
+            block_hash_res[64] = '\0';
+            if(block_hash.compare(block_hash_res) == 0) {
+                // 把当前块文件写入到目标文件，没重置过文件指针，会是追加的方式写入
+                Tools::file_to_file(target_file, block_file);
+            } else {
+                throw 1;
+            }
+            block_file.close(); // 记得关闭块文件
         }
         target_file.close();
     }

@@ -25,7 +25,7 @@ int Tools::sha_file(bfs::fstream& fp, char res[])
     SHA256_Final(hash, &sha256);
     int i = 0;
     for(; i < 32; i++) {
-        sprintf(&res[i*2], "%0x",  hash[i]);
+        sprintf(&res[i*2], "%02x",  hash[i]);
     }
     return 0;
 }
