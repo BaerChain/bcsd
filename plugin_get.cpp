@@ -71,7 +71,6 @@ int plugin_get::store_file_into_path()
     // 如果打开成功，说明本地有这个单个文件，失败就去分块拼接
     if(p_whole_file.is_open()) {
         char res[65] = "";
-        res[64] = '\0';
         // 计算单个文件的hash值，如果和请求的不同，说明本地文件被篡改了
         Tools::sha_file(p_whole_file, res);
         std::cout << "compare result:" << file_hash.compare(res) << std::endl;
@@ -99,7 +98,6 @@ int plugin_get::store_file_into_path()
             // hash转路径
             char block_hash_path[80] = "";
             Tools::sha_to_path(const_cast<char *>(block_hash.c_str()), block_hash_path);
-            block_hash_path[79] = '\0';
             // 拼出块的路径
             block_path = "./L2";
             block_path /= block_hash_path;
@@ -108,10 +106,10 @@ int plugin_get::store_file_into_path()
 
             // 打开块文件
             block_file.open(block_path, std::ios::in | std::ios::binary);
+            assert(block_file.is_open());
             // 获取文件的hash比对存储的hash是否一致，不一致说明json或文件被篡改
             char block_hash_res[65] = "";
             Tools::sha_file(block_file, block_hash_res);
-            block_hash_res[64] = '\0';
             if(block_hash.compare(block_hash_res) == 0) {
                 // 把当前块文件写入到目标文件，没重置过文件指针，会是追加的方式写入
                 Tools::file_to_file(target_file, block_file);

@@ -29,7 +29,6 @@ void plugin_add::plugin_startup()
     // 计算整个文件的sha256的值并返回到re里
     char re[65] = "";
     Tools::sha_file(this->file_stream, re);
-    re[64] = '\0';
     bfs::path copy_file_path = "./L1";
     copy_file_path /= re;   // 拼接整个文件改名的路径
     //复制文件到copy_file_path路径里，调用的是boost::filesystem提供的方法
@@ -82,6 +81,7 @@ int plugin_add::cut_block()
     file_stream.seekp(std::ios::beg);
     bfs::path block_name;
     bfs::fstream block_f;
+    r_path = ".";
     int i = 0;
     int left_file_size = this->file_size;
     char buf[BLOCK_SIZE] = "";
@@ -99,7 +99,6 @@ int plugin_add::cut_block()
 
         char res_hash[65] = "";
         Tools::sha_file_block(buf, res_hash, read_buf_size);
-        res_hash[64] = '\0';
         std::cout << _block_name << " hash is :" << res_hash << std::endl;
         char cur_path[80] = "";
         Tools::sha_to_path(res_hash, cur_path);
@@ -112,10 +111,12 @@ int plugin_add::cut_block()
 
         // 把名字赋值给boost库的path类来管理
         block_name = r_path;
+        block_name /= "L2";
         block_name /= cur_path;
         block_name /= res_hash;
-        block_f.open(block_name, std::ios::out | std::ios::binary);
 
+        block_f.open(block_name, std::ios::out | std::ios::binary);
+        assert(block_f.is_open());
         block_f.write(buf, read_buf_size);
         block_f.close(); //记得要关闭文件
         left_file_size = left_file_size - BLOCK_SIZE; //减去已经读了的分块大小就是剩余总的大小

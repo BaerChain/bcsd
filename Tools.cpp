@@ -27,6 +27,7 @@ int Tools::sha_file(bfs::fstream& fp, char res[])
     for(; i < 32; i++) {
         sprintf(&res[i*2], "%02x",  hash[i]);
     }
+    res[64] = '\0';
     return 0;
 }
 
@@ -49,6 +50,7 @@ int Tools::sha_file_block(char buf[], char res[], int buf_size)
     for(; i < 32; i++) {
         sprintf(&res[i*2], "%02x",  hash[i]);
     }
+    res[64] = '\0';
     return 0;
 }
 
@@ -91,15 +93,19 @@ int Tools::sha_to_path(char sha_val[], char res[])
  * 把一个文件写入到另一个文件
  * @参数file_write 目标结果文件
  * @参数file_read  源数据文件
- * @return = 0 表示执行成功
+ * @return 表示写入的字节数
  */
 int Tools::file_to_file(bfs::fstream& file_write, bfs::fstream& file_read)
 {
+    int already_read_bytes = 0;
+    file_read.clear();
+    file_read.seekg(std::ios::beg);
     while(!file_read.eof()) {
         char buf[BLOCK_SIZE] = "";
         file_read.read(buf, BLOCK_SIZE);
         int real_read_size = file_read.gcount();
+        already_read_bytes += real_read_size;
         file_write.write(buf, real_read_size);
     }
-    return 0;
+    return already_read_bytes;
 }
