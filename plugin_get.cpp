@@ -45,6 +45,7 @@ void plugin_get::plugin_shutdown()
     std::cout << "shutdown chain plugin \n";
 }
 
+// 只是简单测试一下计算偏移后的数据的sha256，后面校验肯定不在这里，也不是这种方式
 void plugin_get::get_offset_hash()
 {
     bfs::path path_block;
@@ -59,7 +60,7 @@ void plugin_get::get_offset_hash()
     assert(file_block.is_open());
     char string_hash_res[65] = "";
     Tools::offset_to_hash(file_block, offset_of_file, length_of_calculate, string_hash_res);
-    std::cout << "block fragment hash is:" << string_hash_res << std::endl;
+    std::cout << "block segment hash is:" << string_hash_res << std::endl;
     return;
 }
 void plugin_get::get_file()
