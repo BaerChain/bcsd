@@ -49,6 +49,7 @@ void plugin_add::plugin_startup()
 
     // 文件分块存入本地，文件名为sha256的值，并存入拿sha256作为分段路径的路径下
     cut_block();
+    plugin_shutdown();
 }
 
 void plugin_add::plugin_shutdown()

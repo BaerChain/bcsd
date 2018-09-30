@@ -1,3 +1,5 @@
+#pragma once
+
 #include <Tools.hpp>
 
 class plugin_get : public appbase::plugin<plugin_get>
@@ -11,6 +13,8 @@ class plugin_get : public appbase::plugin<plugin_get>
     void plugin_startup();
     void plugin_shutdown();
 
+    void get_file();
+    void get_offset_hash();
     int download_block();
     int store_file_into_path();
   private:
@@ -23,4 +27,6 @@ class plugin_get : public appbase::plugin<plugin_get>
     bfs::fstream json_file;
     Json::Reader root_reader;
     Json::Value node;
+    int offset_of_file;
+    int length_of_calculate;
 };

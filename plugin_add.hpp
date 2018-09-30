@@ -1,20 +1,6 @@
-#include <appbase/application.hpp>
-#include <iostream>
-#include <boost/exception/diagnostic_information.hpp>
-#include <boost/filesystem.hpp>
-#include <jsoncpp/json/json.h>
-#include <openssl/sha.h>
+#pragma once
+
 #include <Tools.hpp>
-
-#define BLOCK_SIZE (1024 * 1024)
-
-namespace bpo = boost::program_options;
-namespace bfs = boost::filesystem;
-
-using bpo::options_description;
-using bpo::variables_map;
-using std::string;
-using std::vector;
 
 class plugin_add : public appbase::plugin<plugin_add>
 {

@@ -3,23 +3,67 @@
 void plugin_get::set_program_options( options_description& cli, options_description& cfg)
 {
     cli.add_options()
-           ("get_file", bpo::value<string>(), "get file hash" )
-           ("store_path", bpo::value<string>(), "store the final file path")
-           ;
+            ("get_file", bpo::value<string>(), "get file hash" )
+            ("store_path", bpo::value<string>(), "store the final file path")
+            ("offset", bpo::value<int>(), "offset num of begin")
+            ("length", bpo::value<int>(), "length of calculate")
+            ;
 }
 
 void plugin_get::plugin_initialize( const variables_map& options )
 {
     // 获取参数
-    file_hash = options["get_file"].as<string>();
-    store_path = options["store_path"].as<string>();
+    if(options.count("get_file")) {
+        file_hash = options["get_file"].as<string>();
+    }
+    if(options.count("store_path")) {
+        store_path = options["store_path"].as<string>();
+    }
+    if(options.count("offset")) {
+        offset_of_file = options["offset"].as<int>();
+        length_of_calculate = options["length"].as<int>();
+    }
+    
+    
     std::cout << "hash is:" << file_hash << "\nstore path is:" << store_path << std::endl;
+    std::cout << "offset_of_file:" << offset_of_file << "\nlength_of_calculate is:" << length_of_calculate << std::endl;
     r_path = ".";
-}
+}   
 
 void plugin_get::plugin_startup()
 {
     std::cout << "starting chain plugin \n";
+    if(length_of_calculate > 0) {
+        get_offset_hash();
+    } else {
+        get_file();
+    }
+}
+
+void plugin_get::plugin_shutdown()
+{
+    std::cout << "shutdown chain plugin \n";
+}
+
+void plugin_get::get_offset_hash()
+{
+    bfs::path path_block;
+    path_block = "./L2";
+    char path_hash[80] = "";
+    Tools::sha_to_path(const_cast<char *>(file_hash.c_str()), path_hash);
+    path_block /= path_hash;
+    path_block /= file_hash.c_str();
+    std::cout << "block path is:" << path_block << std::endl;
+    bfs::fstream file_block;
+    file_block.open(path_block, std::ios::binary | std::ios::in);
+    assert(file_block.is_open());
+    char string_hash_res[65] = "";
+    Tools::offset_to_hash(file_block, offset_of_file, length_of_calculate, string_hash_res);
+    std::cout << "block fragment hash is:" << string_hash_res << std::endl;
+    return;
+}
+void plugin_get::get_file()
+{
     // 读取文件需要这样一个buf来中转到string里
     std::stringstream buf;
     bfs::path json_path = "./L0";
@@ -40,12 +84,7 @@ void plugin_get::plugin_startup()
     json_file.close();  //记得关闭文件
     std::cout << "json is:" << json_content << std::endl;
     store_file_into_path();
-}
-
-void plugin_get::plugin_shutdown()
-{
-    std::cout << "shutdown chain plugin \n";
-    
+    return;
 }
 
 int plugin_get::download_block()

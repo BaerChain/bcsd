@@ -109,3 +109,33 @@ int Tools::file_to_file(bfs::fstream& file_write, bfs::fstream& file_read)
     }
     return already_read_bytes;
 }
+
+/***
+ * 计算文件偏移量后面指定长度的SHA256的值
+ * @参数file_check 需要计算的文件
+ * @参数offset_num 文件从开始位置计算的偏移量
+ * @参数length_num 需要计算的字节数
+ * @参数res 返回的值，需要65个字节
+ * @return 0表示计算成功
+ */
+int Tools::offset_to_hash(bfs::fstream& file_check, int offset_num, int length_num, char res[])
+{
+    char buf[length_num];
+    unsigned char hash[SHA256_DIGEST_LENGTH] = "";
+    SHA256_CTX sha256;
+    SHA256_Init(&sha256);
+    file_check.clear();
+    file_check.seekg(offset_num, std::ios::beg);
+    file_check.read(buf, length_num);
+    if(length_num != file_check.gcount()){
+        throw -1;   // 表示传入的偏移量和长度加起来超过了文件的长度，抛出异常
+    }
+    SHA256_Update(&sha256, buf, length_num);
+    SHA256_Final(hash, &sha256);
+    int i = 0;
+    for(; i < 32; i++) {
+        sprintf(&res[i*2], "%02x",  hash[i]);
+    }
+    res[64] = '\0';
+    return 0;
+}

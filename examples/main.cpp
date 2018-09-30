@@ -12,7 +12,7 @@ int main( int argc, char** argv ) {
     if( !appbase::app().initialize( argc, argv ) )
        return -1;
     appbase::app().startup();
-    appbase::app().exec();
+    //appbase::app().exec();
   } catch ( const boost::exception& e ) {
     std::cerr << boost::diagnostic_information(e) << "\n";
   } catch ( const std::exception& e ) {
