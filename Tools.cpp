@@ -43,7 +43,6 @@ int Tools::sha_file_block(char buf[], char res[], int buf_size)
     unsigned char hash[SHA256_DIGEST_LENGTH] = "";
     SHA256_CTX sha256;
     SHA256_Init(&sha256);
-    // 我这里的块目前都是小于等于我们规定的块大小，所以不用循环，一次就行
     SHA256_Update(&sha256, buf, buf_size);
     SHA256_Final(hash, &sha256);
     int i = 0;
