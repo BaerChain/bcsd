@@ -1,4 +1,4 @@
-# Defines AppBase library target.
+﻿# Defines AppBase library target.
 project( AppBase )
 cmake_minimum_required( VERSION 2.8.12 )
 
@@ -44,6 +44,7 @@ add_library( appbase
              Tools.cpp
              plugin_add.cpp
              plugin_get.cpp
+			 first_level_db.cpp
            )
 
 
@@ -51,7 +52,7 @@ target_include_directories( appbase
         PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include" "${CMAKE_CURRENT_SOURCE_DIR}" ${Boost_INCLUDE_DIR})
 
 
-target_link_libraries( appbase ${Boost_LIBRARIES} crypto jsoncpp)
+target_link_libraries( appbase ${Boost_LIBRARIES} crypto jsoncpp leveldb)
 
 
 INSTALL( TARGETS
