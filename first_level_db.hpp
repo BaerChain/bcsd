@@ -18,7 +18,7 @@ struct SFirstLevelDb
     std::string id_name;
     std::string name;
     std::string value;
-    std::string verson;
+    std::string version;
     int size;
 
     SFirstLevelDb()
@@ -26,7 +26,7 @@ struct SFirstLevelDb
         id_name = "";
         name = "";
         value = "";
-        verson = "";
+        version = "";
         size = 0;
     }
 };
@@ -45,8 +45,10 @@ private:
     int update_file(SFirstLevelDb& file_data);
 
     void  file_str_sdate(std::string& file_str, SFirstLevelDb& sdata);
-
-public:
+    
+    bool get_index_value(const std::string& key_str, const std::string& value_str, std::string& new_value_str);
+    
+public: 
     int put_new_file( std::string& message);
     int update_file( std::string& up_message);
     int delete_file(const std::string& key_string);

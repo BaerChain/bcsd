@@ -79,11 +79,11 @@ void CFirstLevelDb::file_str_sdate(std::string& file_str, SFirstLevelDb& sdata)
         sdata.name = root["name"].asString();
         cout << "get name ok::" <<sdata.name << endl;
     }
-    //verson 
-    if (root.isMember("verson"))
+    //version 
+    if (root.isMember("version"))
     {
-        sdata.verson = root["verson"].asString();
-        cout << "get name verson::" <<sdata.verson<< endl;
+        sdata.version = root["version"].asString();
+        cout << "get name version::" <<sdata.version<< endl;
 
     }
     //size
@@ -93,15 +93,34 @@ void CFirstLevelDb::file_str_sdate(std::string& file_str, SFirstLevelDb& sdata)
         cout << "get name size::" <<sdata.size<< endl;
 
     }
-    sdata.id_name = sdata.name + "_" + sdata.verson;
+    sdata.id_name = sdata.name + "_" + sdata.version;
 
     cout << "get name idname::" << sdata.id_name << endl;
 
 }
 
+//更新索引kv时，检查重复等等
+//目前恒为真
+bool CFirstLevelDb::get_index_value(const std::string & key_str, const std::string & value_str, std::string & new_value_str)
+{
+    new_value_str = "";
+    status = db->Get(leveldb::ReadOptions(), key_str, &new_value_str);
+    if (!new_value_str.empty())
+    {
+       // 判断是否 存在 value_str
+       if (0)
+       {
+           return false;
+       }
+       new_value_str = new_value_str + "," + value_str;
+    }
+    new_value_str = value_str; 
+    return true;
+}
+
 //加入新的文件信息
 //测试版本 暂时使用json 所以参数都以string 为主
-int CFirstLevelDb::put_new_file(std::string & message)
+int CFirstLevelDb::put_new_file(std::string& message)
 {
     //文件属性结构转换
     SFirstLevelDb file_date;
@@ -117,33 +136,27 @@ int CFirstLevelDb::put_new_file(std::string & message)
     {
         //有旧文件 更新操作
         update_file(file_date);
+        std::cout << "更新现有文件" << std::endl;
         return 0;
     }
     
     cout << "start check old file" << endl;
     //读取旧的kv
-    std::string file_name_value;
-    status = db->Get(leveldb::ReadOptions(), "name", &file_name_value);
-    cout << "file_name_value :" << file_name_value << endl;
-    //assert(status.ok());
-    std::string file_verson_value;
-    status = db->Get(leveldb::ReadOptions(), "verson", &file_verson_value);
-   //assert(status.ok());
-
     //批量操作 原子
-     // Batch atomic write.
+    // Batch atomic write.
     leveldb::WriteBatch batch;
-    if (!file_verson_value.empty())
+    std::string new_value;
+    if (get_index_value(file_date.name, file_date.version, new_value))
     {
-        batch.Put(file_date.verson, file_name_value + "," + file_date.verson);
-        cout << "up name index" << file_name_value + "," + file_date.verson<< endl;
+        batch.Put(file_date.name, new_value );
+        cout << "up name index:" << new_value << endl;
     }
-    if (!file_verson_value.empty())
+    if (get_index_value(file_date.version, file_date.name, new_value))
     {
-        batch.Put(file_date.name, file_verson_value + "," + file_date.verson);
-        cout << "up verson index" << file_verson_value + "," + file_date.verson<< endl;
+        batch.Put(file_date.version, new_value );
+        cout << "up version index:" << new_value << endl;
+    }
 
-    }
     cout << "id_name:" << file_date.id_name << endl;
     cout << "file_value:" << file_date.id_name << endl;
 
@@ -170,7 +183,8 @@ int CFirstLevelDb::update_file(SFirstLevelDb& file_data)
     return 1;
 }
 
-
+// key_string 查询key值
+// str_date 输出查询结果
 int CFirstLevelDb::get_message(const std::string & key_string, std::string& str_date)
 {
     status = db->Get(leveldb::ReadOptions(), key_string, &str_date);
