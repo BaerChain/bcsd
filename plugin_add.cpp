@@ -1,4 +1,5 @@
 #include <plugin_add.hpp>
+#include <first_level_db.hpp>
 
 void plugin_add::set_program_options( options_description& cli, options_description& cfg)
 {
@@ -29,6 +30,10 @@ void plugin_add::plugin_startup()
     // 计算整个文件的sha256的值并返回到re里
     char re[65] = "";
     Tools::sha_file(this->file_stream, re);
+    /*
+        检测文件是否重复
+        :To do! 
+    */
     bfs::path copy_file_path = "./L1";
     copy_file_path /= re;   // 拼接整个文件改名的路径
     //复制文件到copy_file_path路径里，调用的是boost::filesystem提供的方法
@@ -38,6 +43,7 @@ void plugin_add::plugin_startup()
     bfs::path json_path = "./L0";
     json_path /= re;
     json_path.replace_extension("json");
+    
     json_file.open(json_path, std::ios::out);
     assert(json_file.is_open());
 
@@ -46,6 +52,7 @@ void plugin_add::plugin_startup()
     node["name"] = file_path.filename().string();
     node["size"] = file_size;
     node["hash"] = re;
+    node["version"] = "1.0";
 
     // 文件分块存入本地，文件名为sha256的值，并存入拿sha256作为分段路径的路径下
     cut_block();
@@ -56,7 +63,17 @@ void plugin_add::plugin_shutdown()
 {
     std::cout << "shutdown chain plugin \n";
     string res = write_to_file.write(node); // 把json对象写入到一个string里
+    string db_res;
+    CFirstLevelDb level_db;
+    string db_name = "./local";
+    string key_string = file_path.filename().string();
+    //key_string.append("_1.0");
+    level_db.init_db(db_name);
+    level_db.put_new_file(res);
     std::cout << "json res is:" << res << std::endl;
+    std::cout << "key is: " << key_string << std::endl;
+    level_db.get_message(key_string, db_res);
+    std::cout << "json res is:" << db_res << std::endl;
     json_file << res;   //写入到文件里
     json_file.close();
     file_stream.close();
@@ -119,8 +136,8 @@ int plugin_add::cut_block()
         block_f.open(block_name, std::ios::out | std::ios::binary);
         assert(block_f.is_open());
         block_f.write(buf, read_buf_size);
-        block_f.close(); //记得要关闭文件
-        left_file_size = left_file_size - BLOCK_SIZE; //减去已经读了的分块大小就是剩余总的大小
+        block_f.close(); // 记得要关闭文件
+        left_file_size = left_file_size - BLOCK_SIZE; // 减去已经读了的分块大小就是剩余总的大小
         if(left_file_size <= 0) break;
         i++;
     }
