@@ -97,18 +97,20 @@ void plugin_get::get_offset_hash()
 
         int i = 0;
         for(; static_cast<unsigned int>(i) < node.size(); i++) {
+
+            // hash转路径，并拼接出当前块的完整的路径
+            char buf_hash_to_path[80] = "";
+            bfs::path path_block_hash = path_offset;    // 为后续拼出块的路径做准备
+            string s_block_hash = json_array[i]["value"].asString();    // 拿到当前块对应的hash值
+            Tools::sha_to_path(const_cast<char *>(s_block_hash.c_str()), buf_hash_to_path);
+            path_block_hash /= buf_hash_to_path;
+            path_block_hash /= s_block_hash.c_str();
+
             if(((i + 1) * BLOCK_SIZE) <= offset_of_file) {
+                assert(!bfs::exists(path_block_hash));
                 std::cout << "continue" << std::endl;
                 continue;
             } else {
-                bfs::path path_block_hash = path_offset;    // 为后续拼出块的路径做准备
-                string s_block_hash = json_array[i]["value"].asString();    // 拿到当前块对应的hash值
-
-                // hash转路径，并拼接出当前块的完整的路径
-                char buf_hash_to_path[80] = "";
-                Tools::sha_to_path(const_cast<char *>(s_block_hash.c_str()), buf_hash_to_path);
-                path_block_hash /= buf_hash_to_path;
-                path_block_hash /= s_block_hash.c_str();
 
                 // 打开块文件并读取偏移后指定的长度
                 bfs::fstream file_block;    // 定义

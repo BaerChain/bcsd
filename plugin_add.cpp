@@ -55,8 +55,8 @@ void plugin_add::plugin_startup()
     node["name"] = file_path.filename().string();
     node["size"] = file_size;
     node["hash"] = re;
-    node["version"] = game_name_string;
-    node["game_name"] = game_version_string;
+    node["game_name"] = game_name_string;
+    node["game_version"] = game_version_string;
 
     // 文件分块存入本地，文件名为sha256的值，并存入拿sha256作为分段路径的路径下
     cut_block();
