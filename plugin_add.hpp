@@ -19,6 +19,8 @@ class plugin_add : public appbase::plugin<plugin_add>
   private:
     int file_size;
     bfs::path file_path;
+    string game_name_string;
+    string game_version_string;
     bfs::fstream file_stream;
     bfs::path r_path;
     bfs::fstream json_file;
