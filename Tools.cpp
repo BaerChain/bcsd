@@ -138,3 +138,20 @@ int Tools::offset_to_hash(bfs::fstream& file_check, int offset_num, int length_n
     res[64] = '\0';
     return 0;
 }
+
+string Tools::SFileData::get_value(const string& str) const
+{
+    if (str.compare("file_name") == 0)
+        return file_name;
+    if (str.compare("file_version") == 0)
+        return file_version;
+    if (str.compare("base_file_name") == 0)
+        return base_file_name;
+    if (str.compare("base_file_version") == 0)
+        return base_file_version;
+    if (str.compare("file_value") == 0)
+        return file_value;
+    if (str.compare("file_hash") == 0)
+        return file_hash;
+    return "";
+}

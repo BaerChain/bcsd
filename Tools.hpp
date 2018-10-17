@@ -19,6 +19,30 @@ using std::vector;
 
 namespace Tools {
 
+    struct SFileData 
+    {
+        string file_name;
+        string file_version;
+        string base_file_name;
+        string base_file_version;
+        string file_value;
+        string file_hash;
+        string file_path;
+
+        string get_value(const string& str) const;
+    };
+
+    enum ESaveErrorCode
+    {
+        e_no_error = 0,
+        e_file_not_exist,    //文件不存在
+        e_file_open_error, 
+        e_file_exit,         //文件之前已经存在
+        e_key_error,         //存储过程 获取key失败
+        e_value_error,       //存储过程 获取value失败
+        e_leveldb_save_error,//数据库存储错误
+    };
+
     // 计算文件的sha256的值
     int sha_file(bfs::fstream& fp, char res[]);
 

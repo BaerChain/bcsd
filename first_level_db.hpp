@@ -3,8 +3,10 @@
 #include <jsoncpp/json/json.h>
 #include "leveldb/db.h"
 #include "leveldb/write_batch.h"
+#include "Tools.hpp"
 
 using namespace std;
+//using namespace Tools;
 
 /*
     提供leveldb存储查询服务
@@ -12,23 +14,16 @@ using namespace std;
     建立需要的索引
     提供对外的增删改接口
 */
+typedef Tools::SFileData SFileTransDate;
 
-struct SFirstLevelDb 
+//level kv  设计结构
+struct SLevelSaveKV
 {
-    std::string id_name;
-    std::string name;
-    std::string value;
-    std::string version;
-    int size;
-
-    SFirstLevelDb()
-    {
-        id_name = "";
-        name = "";
-        value = "";
-        version = "";
-        size = 0;
-    }
+    vector<string> key_str;    // file name 
+    string value;           // file value_name 泛型
+    string spli_flag;       // 分隔符
+    int is_repeat;          // vaue 时候重复
+    int kv_id;              // 每个kv的id
 };
 
 class CFirstLevelDb
@@ -36,26 +31,30 @@ class CFirstLevelDb
 public:
     CFirstLevelDb();
     ~CFirstLevelDb();
-    int init_db(const std::string name_db);
+    int init_db(const char* name_db, const char* config_name);
     int close_db();
 private:
-    int put_new_kv(std::string& message);
-    int delete_kv(const std::string& key_string);
-    int update_kv(std::string& message);
-    int update_file(SFirstLevelDb& file_data);
 
-    void  file_str_sdate(std::string& file_str, SFirstLevelDb& sdata);
-    
-    bool get_index_value(const std::string& key_str, const std::string& value_str, std::string& new_value_str);
+    int load_config(const char* file_name);
+
+    Tools::ESaveErrorCode put_new_kvs(const Tools::SFileData& file_data);
     
 public: 
-    int put_new_file( std::string& message);
-    int update_file( std::string& up_message);
     int delete_file(const std::string& key_string);
+
+    Tools::ESaveErrorCode put_new_file(Tools::SFileData& file_data);
+
+    Tools::ESaveErrorCode update_file(const Tools::SFileData* file_data);
+
     int get_message(const std::string& key_string, std::string& str_date);
 
 private:
     leveldb::DB* db;
     leveldb::Options options;
     leveldb::Status status;
+    boost::filesystem::fstream file_stream;
+    Json::FastWriter fwrite;
+    Json::Reader reader;
+    vector<SLevelSaveKV> v_save_kv;
 };
+
