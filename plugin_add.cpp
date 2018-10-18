@@ -32,7 +32,7 @@ void plugin_add::plugin_startup()
     std::cout << "starting chain plugin \n";
     // 计算整个文件的sha256的值并返回到re里
     char re[65] = "";
-    Tools::sha_file(file_stream, re);
+    tools::sha_file(file_stream, re);
     /*
         检测文件是否重复
         :To do! 
@@ -120,10 +120,10 @@ int plugin_add::cut_block()
         assert(file_stream.read(buf, read_buf_size));
 
         char res_hash[65] = "";
-        Tools::sha_file_block(buf, res_hash, read_buf_size);
+        tools::sha_file_block(buf, res_hash, read_buf_size);
         std::cout << _block_name << " hash is :" << res_hash << std::endl;
         char cur_path[80] = "";
-        Tools::sha_to_path(res_hash, cur_path);
+        tools::sha_to_path(res_hash, cur_path);
         // 把文件块按序号写入json
         Json::Value item;
         item["num"] = i;

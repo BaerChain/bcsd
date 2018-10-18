@@ -102,7 +102,7 @@ void plugin_get::get_offset_hash()
             char buf_hash_to_path[80] = "";
             bfs::path path_block_hash = path_offset;    // 为后续拼出块的路径做准备
             string s_block_hash = json_array[i]["value"].asString();    // 拿到当前块对应的hash值
-            Tools::sha_to_path(const_cast<char *>(s_block_hash.c_str()), buf_hash_to_path);
+            tools::sha_to_path(const_cast<char *>(s_block_hash.c_str()), buf_hash_to_path);
             path_block_hash /= buf_hash_to_path;
             path_block_hash /= s_block_hash.c_str();
 
@@ -139,7 +139,7 @@ void plugin_get::get_offset_hash()
         }
     }
     // 计算hash
-    Tools::sha_file_block(buf_offset, buf_hash_result, length_of_calculate);
+    tools::sha_file_block(buf_offset, buf_hash_result, length_of_calculate);
     std::cout << "want to hash is " << buf_hash_result << std::endl;
     return;
 }
@@ -148,7 +148,7 @@ void plugin_get::get_block_offset_hash()
     bfs::path path_block;
     path_block = "./L2";
     char path_hash[80] = "";
-    Tools::sha_to_path(const_cast<char *>(file_hash.c_str()), path_hash);
+    tools::sha_to_path(const_cast<char *>(file_hash.c_str()), path_hash);
     path_block /= path_hash;
     path_block /= file_hash.c_str();
     std::cout << "block path is:" << path_block << std::endl;
@@ -156,7 +156,7 @@ void plugin_get::get_block_offset_hash()
     file_block.open(path_block, std::ios::binary | std::ios::in);
     assert(file_block.is_open());
     char string_hash_res[65] = "";
-    Tools::offset_to_hash(file_block, offset_of_file, length_of_calculate, string_hash_res);
+    tools::offset_to_hash(file_block, offset_of_file, length_of_calculate, string_hash_res);
     file_block.close();
     std::cout << "want to hash is " << string_hash_res << std::endl;
     return;
@@ -211,7 +211,7 @@ int plugin_get::store_file_into_path()
     if(p_whole_file.is_open()) {
         char res[65] = "";
         // 计算单个文件的hash值，如果和请求的不同，说明本地文件被篡改了
-        Tools::sha_file(p_whole_file, res);
+        tools::sha_file(p_whole_file, res);
         std::cout << "compare result:" << file_hash.compare(res) << std::endl;
         // 相同就直接把文件复制到用户希望的路径下，文件名改回原来的文件名
         if(file_hash.compare(res) == 0) {
@@ -236,7 +236,7 @@ int plugin_get::store_file_into_path()
             
             // hash转路径
             char block_hash_path[80] = "";
-            Tools::sha_to_path(const_cast<char *>(block_hash.c_str()), block_hash_path);
+            tools::sha_to_path(const_cast<char *>(block_hash.c_str()), block_hash_path);
             // 拼出块的路径
             block_path = "./L2";
             block_path /= block_hash_path;
@@ -248,10 +248,10 @@ int plugin_get::store_file_into_path()
             assert(block_file.is_open());
             // 获取文件的hash比对存储的hash是否一致，不一致说明json或文件被篡改
             char block_hash_res[65] = "";
-            Tools::sha_file(block_file, block_hash_res);
+            tools::sha_file(block_file, block_hash_res);
             if(block_hash.compare(block_hash_res) == 0) {
                 // 把当前块文件写入到目标文件，没重置过文件指针，会是追加的方式写入
-                Tools::file_to_file(target_file, block_file);
+                tools::file_to_file(target_file, block_file);
             } else {
                 throw 1;
             }

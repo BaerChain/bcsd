@@ -17,7 +17,7 @@ using bpo::variables_map;
 using std::string;
 using std::vector;
 
-namespace Tools {
+namespace tools {
 
     struct SFileData 
     {

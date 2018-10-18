@@ -41,7 +41,7 @@ endif()
 
 add_library( appbase
              application.cpp
-             Tools.cpp
+             tools.cpp
              plugin_add.cpp
              plugin_get.cpp
 			 first_level_db.cpp

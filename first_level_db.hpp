@@ -3,10 +3,10 @@
 #include <jsoncpp/json/json.h>
 #include "leveldb/db.h"
 #include "leveldb/write_batch.h"
-#include "Tools.hpp"
+#include "tools.hpp"
 
 using namespace std;
-//using namespace Tools;
+//using namespace tools;
 
 /*
     提供leveldb存储查询服务
@@ -14,7 +14,7 @@ using namespace std;
     建立需要的索引
     提供对外的增删改接口
 */
-typedef Tools::SFileData SFileTransDate;
+typedef tools::SFileData SFileTransDate;
 
 //level kv  设计结构
 struct SLevelSaveKV
@@ -37,14 +37,14 @@ private:
 
     int load_config(const char* file_name);
 
-    Tools::ESaveErrorCode put_new_kvs(const Tools::SFileData& file_data);
+    tools::ESaveErrorCode put_new_kvs(const tools::SFileData& file_data);
     
 public: 
     int delete_file(const std::string& key_string);
 
-    Tools::ESaveErrorCode put_new_file(Tools::SFileData& file_data);
+    tools::ESaveErrorCode put_new_file(tools::SFileData& file_data);
 
-    Tools::ESaveErrorCode update_file(const Tools::SFileData* file_data);
+    tools::ESaveErrorCode update_file(const tools::SFileData* file_data);
 
     int get_message(const std::string& key_string, std::string& str_date);
 

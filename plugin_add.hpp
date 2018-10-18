@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Tools.hpp>
+#include <tools.hpp>
 
 class plugin_add : public appbase::plugin<plugin_add>
 {

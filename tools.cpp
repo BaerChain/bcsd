@@ -1,4 +1,4 @@
-#include <Tools.hpp>
+#include <tools.hpp>
 
 /***
  * 把传入的文件做hash，然后传出结果
@@ -6,7 +6,7 @@
  * @参数res 结果通过这个数组返回，需要65个字节
  * @return < 0 表示计算失败
  */
-int Tools::sha_file(bfs::fstream& fp, char res[])
+int tools::sha_file(bfs::fstream& fp, char res[])
 {
     fp.clear();
     fp.seekp(std::ios::beg);
@@ -38,7 +38,7 @@ int Tools::sha_file(bfs::fstream& fp, char res[])
  * @参数buf_size 传入块的大小
  * @return < 0 表示计算失败
  */
-int Tools::sha_file_block(char buf[], char res[], int buf_size)
+int tools::sha_file_block(char buf[], char res[], int buf_size)
 {
     unsigned char hash[SHA256_DIGEST_LENGTH] = "";
     SHA256_CTX sha256;
@@ -62,7 +62,7 @@ int Tools::sha_file_block(char buf[], char res[], int buf_size)
  * @参数res 创建好以后的目录最后的路径
  * @return < 0 表示计算失败
  */
-int Tools::sha_to_path(char sha_val[], char res[])
+int tools::sha_to_path(char sha_val[], char res[])
 {
     int i = 0;
     int cut = 4;
@@ -94,7 +94,7 @@ int Tools::sha_to_path(char sha_val[], char res[])
  * @参数file_read  源数据文件
  * @return 表示写入的字节数
  */
-int Tools::file_to_file(bfs::fstream& file_write, bfs::fstream& file_read)
+int tools::file_to_file(bfs::fstream& file_write, bfs::fstream& file_read)
 {
     int already_read_bytes = 0;
     file_read.clear();
@@ -117,7 +117,7 @@ int Tools::file_to_file(bfs::fstream& file_write, bfs::fstream& file_read)
  * @参数res 返回的值，需要65个字节
  * @return 0表示计算成功
  */
-int Tools::offset_to_hash(bfs::fstream& file_check, int offset_num, int length_num, char res[])
+int tools::offset_to_hash(bfs::fstream& file_check, int offset_num, int length_num, char res[])
 {
     char buf[length_num];
     unsigned char hash[SHA256_DIGEST_LENGTH] = "";
@@ -139,7 +139,7 @@ int Tools::offset_to_hash(bfs::fstream& file_check, int offset_num, int length_n
     return 0;
 }
 
-string Tools::SFileData::get_value(const string& str) const
+string tools::SFileData::get_value(const string& str) const
 {
     if (str.compare("file_name") == 0)
         return file_name;
