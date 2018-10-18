@@ -3,12 +3,14 @@
 #include <boost/exception/diagnostic_information.hpp>
 #include <plugin_add.hpp>
 #include <plugin_get.hpp>
+#include <plugin_check.hpp>
 
 
 int main( int argc, char** argv ) {
   try {
     appbase::app().register_plugin<plugin_add>();
     appbase::app().register_plugin<plugin_get>();
+    appbase::app().register_plugin<plugin_check>();
     if( !appbase::app().initialize( argc, argv ) )
        return -1;
     appbase::app().startup();

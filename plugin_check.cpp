@@ -1,17 +1,25 @@
 #include <plugin_check.hpp>
 
-void plugin_check::set_program_options( options_description& cli, options_description& cfg) override
+void plugin_check::set_program_options( options_description& cli, options_description& cfg)
 {
     cli.add_options()
+            ("check_file", bpo::value<string>(), "the file hash while want to check")
             ("offset", bpo::value<long long>(), "offset num of begin")
             ("length", bpo::value<long long>(), "length of calculate")
             ;
-    }
 }
 
 void plugin_check::plugin_initialize( const variables_map& options )
 {
+    root_path = ".";
+    // 初始化数据库
+    bfs::path leveldb_path = root_path;
+    leveldb_path /= "local";
+    bfs::path config_path = root_path;
+    config_path /= "../kv_config.json";
+    leveldb_control.init_db(leveldb_path.string().c_str(), config_path.string().c_str());
     if(options.count("offset")) {
+        check_file_hash = options["check_file"].as<string>();
         offset_of_file = options["offset"].as<long long>();
         length_of_calculate = options["length"].as<long long>();
     }
@@ -32,9 +40,9 @@ void plugin_check::get_offset_hash()
 {
     char buf_offset[length_of_calculate] = "";
     char buf_hash_result[65] = "";
-    bfs::path path_offset;
-    path_offset = "./L1";
-    path_offset /= file_hash;
+    bfs::path path_offset = root_path;
+    path_offset /= "L1";
+    path_offset /= check_file_hash;
     // 判断是否存在完整的文件
     if(exists(path_offset)) {
         std::cout << "is exists\n";
@@ -52,7 +60,7 @@ void plugin_check::get_offset_hash()
     } else {
         std::cout << "is not exists!\n";
         // 不存在 偏移从块文件里读取
-        bfs::path path_json;
+        //bfs::path path_json;
         int length_of_remain = length_of_calculate;
         int size_of_readed = 0;
 
@@ -60,20 +68,22 @@ void plugin_check::get_offset_hash()
         int offset_current_block = offset_of_file % BLOCK_SIZE;
 
         // 拼接出对应json的路径
-        path_json = "./L0";
-        path_json /= file_hash;
-        path_json.replace_extension("json");
+        //path_json = "./L0";
+        //path_json /= file_hash;
+        //path_json.replace_extension("json");
 
-        path_offset = "./L2";
+        path_offset = root_path;
+        path_offset /= "L2";
 
         // 解析json
-        std::stringstream buf_json_file;
-        bfs::fstream file_json;
-        file_json.open(path_json, std::ios::in);
-        assert(file_json.is_open());
-        buf_json_file << file_json.rdbuf();
-        file_json.close(); // 关闭文件
-        json_content = buf_json_file.str();
+        //std::stringstream buf_json_file;
+        //bfs::fstream file_json;
+        //file_json.open(path_json, std::ios::in);
+        //assert(file_json.is_open());
+        //buf_json_file << file_json.rdbuf();
+        //file_json.close(); // 关闭文件
+        //json_content = buf_json_file.str();
+        leveldb_control.get_message(check_file_hash.string(), json_content);
         root_reader.parse(json_content, node);  // 解析json并交给node
         Json::Value json_array = node["block"]; // 取出块文件的信息
 
@@ -89,7 +99,7 @@ void plugin_check::get_offset_hash()
             path_block_hash /= s_block_hash.c_str();
 
             if(((i + 1) * BLOCK_SIZE) <= offset_of_file) {
-                assert(!bfs::exists(path_block_hash));
+                assert(bfs::exists(path_block_hash));
                 std::cout << "continue" << std::endl;
                 continue;
             } else {
@@ -130,9 +140,9 @@ void plugin_check::get_block_offset_hash()
     bfs::path path_block;
     path_block = "./L2";
     char path_hash[80] = "";
-    tools::sha_to_path(const_cast<char *>(file_hash.c_str()), path_hash);
+    tools::sha_to_path(const_cast<char *>(check_file_hash.c_str()), path_hash);
     path_block /= path_hash;
-    path_block /= file_hash.c_str();
+    path_block /= check_file_hash.c_str();
     std::cout << "block path is:" << path_block << std::endl;
     bfs::fstream file_block;
     file_block.open(path_block, std::ios::binary | std::ios::in);
