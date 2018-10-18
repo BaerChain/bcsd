@@ -36,6 +36,7 @@ int CFirstLevelDb::close_db()
 
 int CFirstLevelDb::load_config(const char * file_name)
 {
+    cout << " start load kv-config" << endl;
     Json::Reader reader;// 解析json用Json::Reader
     Json::Value root;
 
@@ -52,7 +53,6 @@ int CFirstLevelDb::load_config(const char * file_name)
         int kv_size = root["key_value"].size();
 
         //读取每个kv设置
-        std::cout << "load three kv item" << std::endl;
         for (int i = 0; i < kv_size; i++)
         {
             Json::Value kv_value = root["key_value"][i];
@@ -84,6 +84,11 @@ int CFirstLevelDb::load_config(const char * file_name)
             v_save_kv.push_back(s_kv);
         }
         cout << "load kv is  ok size:" << v_save_kv.size()<< endl;
+    }
+    if (v_save_kv.empty())
+    {
+        cout << "load kv-config faid and pease check!" << endl;
+        return 0;
     }
     return 1;
 }
@@ -117,15 +122,15 @@ tools::ESaveErrorCode CFirstLevelDb::put_new_kvs(const tools::SFileData& file_da
         }
         if (!is_get_ok || key_str.empty())
         {
-            cout << "get the number:" << i << " key-value_item's key faild " << endl;
+            cout << "get the number:" << i << " key-value_item's key faild  and continue next!"  << endl;
             continue;
         }
-        //获取value 失败者 全部过程失败
+        //获取value 失败则跳过这个index ，继续下一个index存储
         string temp_value = file_data.get_value(v_save_kv[i].value);
         if (temp_value.empty())
         {
-            cout << "Error get value error" << endl;
-            return tools::ESaveErrorCode::e_value_error;
+            cout << " get value:"<< v_save_kv[i].value << " is empty and continue next!" << endl;
+            continue;
         }
 
         //已经获取到了 key - value
@@ -186,7 +191,7 @@ tools::ESaveErrorCode CFirstLevelDb::put_new_file(tools::SFileData& file_data)
     status = db->Get(leveldb::ReadOptions(), hash_ret, &temp_value);
     if (status.ok())
     {
-        std::cout << "the file" << file_data.file_name << " is already exist!" << std::endl;
+        std::cout << "the file " << file_data.file_name << " is already exist!" << std::endl;
         return tools::ESaveErrorCode::e_file_exit;
     }
     file_stream.close();
@@ -208,7 +213,7 @@ tools::ESaveErrorCode CFirstLevelDb::put_new_file(tools::SFileData& file_data)
     }
 
     file_data.file_value = fwrite.write(node);
-    std::cout << "file value in leveldb is: " << file_data.file_value << std::endl;
+    //std::cout << "file value in leveldb is: " << file_data.file_value << std::endl;
     return put_new_kvs(file_data);
 }
 
@@ -223,7 +228,7 @@ tools::ESaveErrorCode CFirstLevelDb::update_file(const tools::SFileData* file_da
         std::cout << "the file" << file_data->file_name << " is not exist!" << std::endl;
         return tools::ESaveErrorCode::e_file_exit;
     }
-    std::cout << "file_data->file_value is: " << file_data->file_value << std::endl;
+    //std::cout << "file_data->file_value is: " << file_data->file_value << std::endl;
     status = db->Put(leveldb::WriteOptions(), file_data->file_hash,file_data->file_value);
     if (status.ok())
         return tools::ESaveErrorCode::e_no_error;
@@ -243,7 +248,7 @@ tools::ESaveErrorCode CFirstLevelDb::update_file_block_data(tools::SFileData& fi
     }
     if(root.isMember("block"))
         root.removeMember("block");
-    root["block"] = fwrite.write(block_value); 
+    root["block"] = block_value;
     file_data.file_value = fwrite.write(root);
     return update_file(&file_data);
 }
