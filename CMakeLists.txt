@@ -45,6 +45,7 @@ add_library( appbase
              plugin_add.cpp
              plugin_get.cpp
              plugin_check.cpp
+             plugin_init.cpp
 			 first_level_db.cpp
            )
 
