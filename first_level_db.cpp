@@ -218,11 +218,12 @@ tools::ESaveErrorCode CFirstLevelDb::update_file(const tools::SFileData* file_da
     //检查文件hash 存在更新，不存在失败
     string temp_value;
     status = db->Get(leveldb::ReadOptions(),file_data->file_hash, &temp_value);
-    if (status.ok())
+    if (!status.ok())
     {
-        std::cout << "the file" << file_data->file_name << " is already exist!" << std::endl;
+        std::cout << "the file" << file_data->file_name << " is not exist!" << std::endl;
         return tools::ESaveErrorCode::e_file_exit;
     }
+    std::cout << "file_data->file_value is: " << file_data->file_value << std::endl;
     status = db->Put(leveldb::WriteOptions(), file_data->file_hash,file_data->file_value);
     if (status.ok())
         return tools::ESaveErrorCode::e_no_error;
@@ -243,7 +244,6 @@ tools::ESaveErrorCode CFirstLevelDb::update_file_block_data(tools::SFileData& fi
     if(root.isMember("block"))
         root.removeMember("block");
     root["block"] = fwrite.write(block_value); 
-    std::cout << "root block is: " << root["block"].asString() << std::endl;
     file_data.file_value = fwrite.write(root);
     return update_file(&file_data);
 }
