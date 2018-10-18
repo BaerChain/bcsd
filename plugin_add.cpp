@@ -21,7 +21,10 @@ void plugin_add::plugin_initialize( const variables_map& options )
     _file_data.base_file_name = options["game_name"].as<std::string>();
     _file_data.base_file_version = options["game_version"].as<std::string>();
     root_path = ".";
-    levedb_control.put_new_file(_file_data);
+    leveldb_path = "./local";
+    config_path = ".";
+    leveldb_control.init_db(leveldb_path.string().c_str(), config_path.string().c_str());
+    leveldb_control.put_new_file(_file_data);
     std::cout << "file hash is:" << _file_data.file_hash << std::endl;
     //file_path = options["add_file"].as<std::string>();
     //game_name_string = options["game_name"].as<std::string>();
@@ -45,9 +48,16 @@ void plugin_add::plugin_startup()
     */
     bfs::path copy_file_path = root_path;
     copy_file_path /= "L1";
-//    copy_file_path /= re;   // 拼接整个文件改名的路径
-    //复制文件到copy_file_path路径里，调用的是boost::filesystem提供的方法
-//    bfs::copy_file(file_path, copy_file_path);
+    copy_file_path /= _file_data.file_hash.c_str();   // 拼接整个文件改名的路径
+    // 复制文件到copy_file_path路径里，调用的是boost::filesystem提供的方法
+    // 这里逻辑上有个问题：如果人为修改了我们本地的文件，是否校验hash，还是说不管，每次都直接写入，有就覆盖原来的
+    if(!bfs::exists(copy_file_path)) {
+        bfs::copy_file(_file_data.file_name, copy_file_path);
+    } else {
+        // 校验hash看是否被篡改
+        // To do!
+        std::cout << "file is exists!" << std::endl;
+    }
 
     // 确定json文件的位置和名字，并打开json文件
     //bfs::path json_path = "./L0";
@@ -66,8 +76,7 @@ void plugin_add::plugin_startup()
     //node["game_version"] = game_version_string;
 
     // 文件分块存入本地，文件名为sha256的值，并存入拿sha256作为分段路径的路径下
-//    cut_block();
-//    plugin_shutdown();
+    cut_block();
 }
 
 void plugin_add::plugin_shutdown()
@@ -106,6 +115,9 @@ int plugin_add::root_dir()
  */
 int plugin_add::cut_block()
 {
+    file_stream.open(_file_data.file_name, std::ios::binary | std::ios::in);
+    // 获取文件的大小
+    file_size = bfs::file_size(_file_data.file_name);
     file_stream.clear();
     file_stream.seekp(std::ios::beg);
     bfs::path block_name;
@@ -151,6 +163,8 @@ int plugin_add::cut_block()
         if(left_file_size <= 0) break;
         i++;
     }
-    node["block"] = block;
+    //node["block"] = block;
+    string block_res = write_to_file.write(block);
+    std::cout << "block res is: " << block_res << std::endl;
     return i + 1;
 }
