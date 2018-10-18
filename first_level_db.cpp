@@ -89,7 +89,7 @@ int CFirstLevelDb::load_config(const char * file_name)
 }
 
 // 加入新的kvs add new file and add other correlation kv
-Tools::ESaveErrorCode CFirstLevelDb::put_new_kvs(const Tools::SFileData& file_data)
+tools::ESaveErrorCode CFirstLevelDb::put_new_kvs(const tools::SFileData& file_data)
 {
     cout << "start put new kvs" << endl;
     int kv_size = v_save_kv.size();
@@ -125,7 +125,7 @@ Tools::ESaveErrorCode CFirstLevelDb::put_new_kvs(const Tools::SFileData& file_da
         if (temp_value.empty())
         {
             cout << "Error get value error" << endl;
-            return Tools::ESaveErrorCode::e_value_error;
+            return tools::ESaveErrorCode::e_value_error;
         }
 
         //已经获取到了 key - value
@@ -169,25 +169,25 @@ Tools::ESaveErrorCode CFirstLevelDb::put_new_kvs(const Tools::SFileData& file_da
     //assert(status.ok());
     cout << "put file ok" << endl;
     //成功
-    return Tools::ESaveErrorCode::e_no_error;
+    return tools::ESaveErrorCode::e_no_error;
 }
 
 //对外接口 加入新的file
 //计算file基本信息
-Tools::ESaveErrorCode CFirstLevelDb::put_new_file(Tools::SFileData& file_data)
+tools::ESaveErrorCode CFirstLevelDb::put_new_file(tools::SFileData& file_data)
 {
     cout << "start put new file" << endl;
     // 检查文件时候存在 hash 检验
     file_stream.open(file_data.file_name, std::ios::in | std::ios::binary);
     char hash_ret[65] = {0};
-    Tools::sha_file(file_stream, hash_ret);
+    tools::sha_file(file_stream, hash_ret);
     file_data.file_hash = string(hash_ret);
     string temp_value;
     status = db->Get(leveldb::ReadOptions(), hash_ret, &temp_value);
     if (status.ok())
     {
         std::cout << "the file" << file_data.file_name << " is already exist!" << std::endl;
-        return Tools::ESaveErrorCode::e_file_exit;
+        return tools::ESaveErrorCode::e_file_exit;
     }
     file_stream.close();
     //文件可以存储
@@ -208,10 +208,11 @@ Tools::ESaveErrorCode CFirstLevelDb::put_new_file(Tools::SFileData& file_data)
     }
 
     file_data.file_value = fwrite.write(node);
+    std::cout << "file value in leveldb is: " << file_data.file_value << std::endl;
     return put_new_kvs(file_data);
 }
 
-Tools::ESaveErrorCode CFirstLevelDb::update_file(const Tools::SFileData* file_data)
+tools::ESaveErrorCode CFirstLevelDb::update_file(const tools::SFileData* file_data)
 {
     //更新文件，只需要更新文件存储信息，不需要更新索引
     //检查文件hash 存在更新，不存在失败
@@ -220,29 +221,31 @@ Tools::ESaveErrorCode CFirstLevelDb::update_file(const Tools::SFileData* file_da
     if (status.ok())
     {
         std::cout << "the file" << file_data->file_name << " is already exist!" << std::endl;
-        return Tools::ESaveErrorCode::e_file_exit;
+        return tools::ESaveErrorCode::e_file_exit;
     }
     status = db->Put(leveldb::WriteOptions(), file_data->file_hash,file_data->file_value);
     if (status.ok())
-        return Tools::ESaveErrorCode::e_no_error;
-    return Tools::ESaveErrorCode::e_leveldb_save_error;
+        return tools::ESaveErrorCode::e_no_error;
+    return tools::ESaveErrorCode::e_leveldb_save_error;
 
 }
 
 
-Tools::ESaveErrorCode CFirstLevelDb::update_file_block_data(Tools::SFileData& file_data, Json::Value& block_value)
+tools::ESaveErrorCode CFirstLevelDb::update_file_block_data(tools::SFileData& file_data, Json::Value& block_value)
 {
     Json::Value root;
-    if (!reader.parse(file_data.file_value, root) 
+    std::cout << "file data is: " << file_data.file_value << std::endl;
+    if (!reader.parse(file_data.file_value, root))
     {
         cout<< "Error parse json value for file_block_date is error!" <<endl;
-            return Tools::ESaveErrorCode::e_json_value_error;
+            return tools::ESaveErrorCode::e_json_value_error;
     }
     if(root.isMember("block"))
         root.removeMember("block");
     root["block"] = fwrite.write(block_value); 
+    std::cout << "root block is: " << root["block"].asString() << std::endl;
     file_data.file_value = fwrite.write(root);
-    return update_file(file_data);
+    return update_file(&file_data);
 }
 
 // key_string 查询key值

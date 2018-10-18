@@ -163,8 +163,13 @@ int plugin_add::cut_block()
         if(left_file_size <= 0) break;
         i++;
     }
+    std::cout << "_file_data is: " << _file_data.file_value << std::endl;
+    leveldb_control.update_file_block_data(_file_data, block);
     //node["block"] = block;
     string block_res = write_to_file.write(block);
     std::cout << "block res is: " << block_res << std::endl;
+    string file_json_res;
+    leveldb_control.get_message(_file_data.file_hash, file_json_res);
+    std::cout << "file json L0 is: " << file_json_res << std::endl;
     return i + 1;
 }
