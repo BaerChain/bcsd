@@ -232,7 +232,17 @@ Tools::ESaveErrorCode CFirstLevelDb::update_file(const Tools::SFileData* file_da
 
 Tools::ESaveErrorCode CFirstLevelDb::update_file_block_data(Tools::SFileData& file_data, Json::Value& block_value)
 {
-    return Tools::ESaveErrorCode::e_no_error;
+    Json::Value root;
+    if (!reader.parse(file_data.file_value, root) 
+    {
+        cout<< "Error parse json value for file_block_date is error!" <<endl;
+            return Tools::ESaveErrorCode::e_json_value_error;
+    }
+    if(root.isMember("block"))
+        root.removeMember("block");
+    root["block"] = fwrite.write(block_value); 
+    file_data.file_value = fwrite.write(root);
+    return update_file(file_data);
 }
 
 // key_string 查询key值
