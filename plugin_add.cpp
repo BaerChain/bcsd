@@ -22,7 +22,7 @@ void plugin_add::plugin_initialize( const variables_map& options )
     _file_data.base_file_version = options["game_version"].as<std::string>();
     root_path = ".";
     leveldb_path = "./local";
-    config_path = ".";
+    config_path = "../kv_config.json";
     leveldb_control.init_db(leveldb_path.string().c_str(), config_path.string().c_str());
     leveldb_control.put_new_file(_file_data);
     std::cout << "file hash is:" << _file_data.file_hash << std::endl;
