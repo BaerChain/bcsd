@@ -1,5 +1,4 @@
 #include <plugin_add.hpp>
-#include <first_level_db.hpp>
 
 void plugin_add::set_program_options( options_description& cli, options_description& cfg)
 {
@@ -17,50 +16,58 @@ void plugin_add::plugin_initialize( const variables_map& options )
 {
     // 这里的variables_map也是框架已经给我们存好了的，里面存放了参数的信息，直接用就行
     // 获取需要的文件路径并保存路径
-    file_path = options["add_file"].as<std::string>();
-    game_name_string = options["game_name"].as<std::string>();
-    game_version_string = options["game_version"].as<std::string>();
+    
+    _file_data.file_name = options["add_file"].as<std::string>();
+    _file_data.base_file_name = options["game_name"].as<std::string>();
+    _file_data.base_file_version = options["game_version"].as<std::string>();
+    root_path = ".";
+    levedb_control.put_new_file(_file_data);
+    std::cout << "file hash is:" << _file_data.file_hash << std::endl;
+    //file_path = options["add_file"].as<std::string>();
+    //game_name_string = options["game_name"].as<std::string>();
+    //game_version_string = options["game_version"].as<std::string>();
     // 获取文件的大小
-    file_size = bfs::file_size(file_path);
-    std::cout << file_size << std::endl;
+    //file_size = bfs::file_size(file_path);
+    //std::cout << file_size << std::endl;
     // 打开文件，为后续操作准备
-    file_stream.open(file_path, std::ios::in | std::ios::binary);
+    //file_stream.open(file_path, std::ios::in | std::ios::binary);
 }
 
 void plugin_add::plugin_startup()
 {
     std::cout << "starting chain plugin \n";
     // 计算整个文件的sha256的值并返回到re里
-    char re[65] = "";
-    tools::sha_file(file_stream, re);
+    //char re[65] = "";
+    //tools::sha_file(file_stream, re);
     /*
         检测文件是否重复
         :To do! 
     */
-    bfs::path copy_file_path = "./L1";
-    copy_file_path /= re;   // 拼接整个文件改名的路径
+    bfs::path copy_file_path = root_path;
+    copy_file_path /= "L1";
+//    copy_file_path /= re;   // 拼接整个文件改名的路径
     //复制文件到copy_file_path路径里，调用的是boost::filesystem提供的方法
-    bfs::copy_file(file_path, copy_file_path);
+//    bfs::copy_file(file_path, copy_file_path);
 
     // 确定json文件的位置和名字，并打开json文件
-    bfs::path json_path = "./L0";
-    json_path /= re;
-    json_path.replace_extension("json");
+    //bfs::path json_path = "./L0";
+    //json_path /= re;
+    //json_path.replace_extension("json");
     
-    json_file.open(json_path, std::ios::out);
-    assert(json_file.is_open());
+    //json_file.open(json_path, std::ios::out);
+    //assert(json_file.is_open());
 
     // 写入原文件的绝对路径，文件名，大小，所属游戏名，所属游戏版本
-    node["path"] = bfs::system_complete(file_path).string();
-    node["name"] = file_path.filename().string();
-    node["size"] = file_size;
-    node["hash"] = re;
-    node["game_name"] = game_name_string;
-    node["game_version"] = game_version_string;
+    //node["path"] = bfs::system_complete(file_path).string();
+    //node["name"] = file_path.filename().string();
+    //node["size"] = file_size;
+    //node["hash"] = re;
+    //node["game_name"] = game_name_string;
+    //node["game_version"] = game_version_string;
 
     // 文件分块存入本地，文件名为sha256的值，并存入拿sha256作为分段路径的路径下
-    cut_block();
-    plugin_shutdown();
+//    cut_block();
+//    plugin_shutdown();
 }
 
 void plugin_add::plugin_shutdown()
@@ -68,15 +75,15 @@ void plugin_add::plugin_shutdown()
     std::cout << "shutdown chain plugin \n";
     string res = write_to_file.write(node); // 把json对象写入到一个string里
     string db_res;
-    CFirstLevelDb level_db;
+    //CFirstLevelDb level_db;
     string db_name = "./local";
     string key_string = file_path.filename().string();
     //key_string.append("_1.0");
-    level_db.init_db(db_name);
-    level_db.put_new_file(res);
+    //level_db.init_db(db_name);
+    //level_db.put_new_file(res);
     std::cout << "json res is:" << res << std::endl;
     std::cout << "key is: " << key_string << std::endl;
-    level_db.get_message(key_string, db_res);
+    //level_db.get_message(key_string, db_res);
     std::cout << "json res is:" << db_res << std::endl;
     json_file << res;   //写入到文件里
     json_file.close();
@@ -103,7 +110,6 @@ int plugin_add::cut_block()
     file_stream.seekp(std::ios::beg);
     bfs::path block_name;
     bfs::fstream block_f;
-    r_path = ".";
     int i = 0;
     int left_file_size = this->file_size;
     char buf[BLOCK_SIZE] = "";
@@ -132,7 +138,7 @@ int plugin_add::cut_block()
         //block[num_s] = res_hash;
 
         // 把名字赋值给boost库的path类来管理
-        block_name = r_path;
+        block_name = root_path;
         block_name /= "L2";
         block_name /= cur_path;
         block_name /= res_hash;

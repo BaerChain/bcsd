@@ -21,13 +21,13 @@ namespace tools {
 
     struct SFileData 
     {
-        string file_name;
-        string file_version;
-        string base_file_name;
-        string base_file_version;
-        string file_value;
-        string file_hash;
-        string file_path;
+        string file_name;           // 添加文件的路劲
+        string file_version;        // 添加文件的版本
+        string base_file_name;      // 游戏的名称
+        string base_file_version;   // 游戏的版本
+        string file_value;          // 生成的json串
+        string file_hash;           // 整个文件的hash
+        string file_path;           // 留着扩展
 
         string get_value(const string& str) const;
     };
