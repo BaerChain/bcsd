@@ -1,0 +1,22 @@
+{
+  "key_value": [
+    {
+      "key": "file_hash",
+      "value": "file_value",
+      "name_slip_flag": "",
+      "is_repeat": 0
+    },
+    {
+      "key": "file_name",
+      "value": "file_version",
+      "name_slip_flag": "",
+      "is_repeat": 1
+    },
+    {
+      "key": [ "base_file_name", "base_file_version" ],
+      "value": "file_hash",
+      "name_slip_flag": "_",
+      "is_repeat": 1
+    }
+  ]
+}
