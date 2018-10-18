@@ -10,7 +10,14 @@ void plugin_get::set_program_options( options_description& cli, options_descript
 
 void plugin_get::plugin_initialize( const variables_map& options )
 {
-    root_path = ".";
+    root_path = ".";    // 后续根目录应该从参数或者配置文件获取
+
+    // 初始化数据库
+    bfs::path leveldb_path = root_path;
+    leveldb_path /= "local";
+    bfs::path config_path = root_path;
+    config_path /= "../kv_config.json";
+    leveldb_control.init_db(leveldb_path.string().c_str(), config_path.string().c_str());
     // 获取参数
     if(options.count("get_file")) {
         file_hash = options["get_file"].as<string>();
@@ -39,25 +46,25 @@ void plugin_get::plugin_shutdown()
 void plugin_get::get_file()
 {
     // 读取文件需要这样一个buf来中转到string里
-    std::stringstream buf;
-    bfs::path json_path = "./L0";
-    json_path /= file_hash;
-    json_path.replace_extension("json");
-    std::cout << "json file is:" << json_path << std::endl;
-    json_file.open(json_path, std::ios::in);
+    //std::stringstream buf;
+    //bfs::path json_path = "./L0";
+    //json_path /= file_hash;
+    //json_path.replace_extension("json");
+    //std::cout << "json file is:" << json_path << std::endl;
+    //json_file.open(json_path, std::ios::in);
 
     // 如果本地有这个hash对应的json表示此文件在本地有存储,
     // 否则去网络上检索，并下载到本地存储结构中
-    if(!json_file.is_open()) {
+    //if(!json_file.is_open()) {
         // 下载完以后就存在本地了，就和本地操作是一样的了
-        download_block();   // 后续注意下载失败的问题
-    }
+    //    download_block();   // 后续注意下载失败的问题
+    //}
     // 从leveldb获取用户请求的hash对应的json
-
-    buf << json_file.rdbuf();
-    json_content = buf.str();   // 把buf里的内容放到string里
+    leveldb_control.get_message(file_hash, json_content);
+    //buf << json_file.rdbuf();
+    //json_content = buf.str();   // 把buf里的内容放到string里
     root_reader.parse(json_content, node);  // 解析json并交给node
-    json_file.close();  // 记得关闭文件
+    //json_file.close();  // 记得关闭文件
     std::cout << "json is:" << json_content << std::endl;
     store_file_into_path();
     return;
@@ -71,7 +78,8 @@ int plugin_get::download_block()
 int plugin_get::store_file_into_path()
 {
     // 拼接出本地存储的整个文件的路径
-    bfs::path whole_file_path = "./L1";
+    bfs::path whole_file_path = root_path;
+    whole_file_path /= "L1";
     whole_file_path /= file_hash;
 
     // 拼接出用户获取文件后存储的路径

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <tools.hpp>
+#include <first_level_db.hpp>
 
 class plugin_get : public appbase::plugin<plugin_get>
 {
@@ -19,6 +20,7 @@ class plugin_get : public appbase::plugin<plugin_get>
     int download_block();
     int store_file_into_path();
   private:
+    CFirstLevelDb leveldb_control;
     bool is_local;
     string file_hash;
     string json_content;
