@@ -24,7 +24,7 @@ class plugin_get : public appbase::plugin<plugin_get>
     string json_content;
     bfs::path store_path;
     bfs::path store_file_path;
-    bfs::path r_path;
+    bfs::path root_path;
     bfs::fstream json_file;
     Json::Reader root_reader;
     Json::Value node;
