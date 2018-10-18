@@ -5,8 +5,6 @@ void plugin_get::set_program_options( options_description& cli, options_descript
     cli.add_options()
             ("get_file", bpo::value<string>(), "get file hash" )
             ("store_path", bpo::value<string>(), "store the final file path")
-            ("offset", bpo::value<int>(), "offset num of begin")
-            ("length", bpo::value<int>(), "length of calculate")
             ;
 }
 
@@ -19,11 +17,6 @@ void plugin_get::plugin_initialize( const variables_map& options )
     if(options.count("store_path")) {
         store_path = options["store_path"].as<string>();
     }
-    if(options.count("offset")) {
-        offset_of_file = options["offset"].as<int>();
-        length_of_calculate = options["length"].as<int>();
-    }
-    
     
     std::cout << "hash is:" << file_hash << "\nstore path is:" << store_path << std::endl;
     std::cout << "offset_of_file:" << offset_of_file << "\nlength_of_calculate is:" << length_of_calculate << std::endl;
@@ -33,11 +26,8 @@ void plugin_get::plugin_initialize( const variables_map& options )
 void plugin_get::plugin_startup()
 {
     std::cout << "starting chain plugin \n";
-    if(length_of_calculate > 0) {
-        get_offset_hash();
-    } else {
-        get_file();
-    }
+    
+    get_file();
 }
 
 void plugin_get::plugin_shutdown()
