@@ -6,6 +6,9 @@ void plugin_get::set_program_options( options_description& cli, options_descript
             ("get_file", bpo::value<string>(), "get file hash" )
             ("store_path", bpo::value<string>(), "store the final file path")
             ;
+    cli.add_options()
+            ("get_config", bpo::value<string>(), "get file config")
+            ;
 }
 
 void plugin_get::plugin_initialize( const variables_map& options )
@@ -21,21 +24,27 @@ void plugin_get::plugin_initialize( const variables_map& options )
     // 获取参数
     if(options.count("get_file")) {
         file_hash = options["get_file"].as<string>();
+        if(options.count("store_path")) {
+            store_path = options["store_path"].as<string>();
+        } else {
+            store_path = root_path;
+            store_path /= "L1";
+        }
+    } else if(options.count("get_config")) {
+        file_hash = options["get_config"].as<string>();
     }
-    if(options.count("store_path")) {
-        store_path = options["store_path"].as<string>();
-    } else {
-        store_path = root_path;
-        store_path /= "L1";
-    }
-    
     std::cout << "hash is:" << file_hash << "\nstore path is:" << store_path << std::endl;
 }   
 
 void plugin_get::plugin_startup()
 {
     std::cout << "starting chain plugin \n";
-    get_file();
+    if(store_path.empty()) {
+        get_config();
+    } else {
+        get_file();
+    }
+    
 }
 
 void plugin_get::plugin_shutdown()
@@ -43,6 +52,13 @@ void plugin_get::plugin_shutdown()
     std::cout << "shutdown chain plugin \n";
 }
 
+void plugin_get::get_config()
+{
+    // 从leveldb获取用户请求的hash对应的json
+    leveldb_control.get_message(file_hash, json_content);
+    std::cout << "file config is: " << json_content << std::endl;
+    return;
+}
 void plugin_get::get_file()
 {
     // 读取文件需要这样一个buf来中转到string里

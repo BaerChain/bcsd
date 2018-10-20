@@ -15,6 +15,7 @@ class plugin_get : public appbase::plugin<plugin_get>
     void plugin_shutdown();
 
     void get_file();
+    void get_config();
     void get_offset_hash();
     void get_block_offset_hash();
     int download_block();
