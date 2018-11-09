@@ -37,6 +37,7 @@ class peer
     void connect_peer(ba::ip::udp::endpoint other_endpoint);
     peer(ba::io_service &ios, unsigned short peer_port);
     int transfer_data(void * buf, int len);
+    int transfer_file(bfs::path transfer_file_path);
     void session_receive();
     void process_receive(const boost::system::error_code &ec);
 
@@ -44,7 +45,8 @@ class peer
     ba::io_service &io_service_con;
   private:
     ba::ip::udp::endpoint ourself_endpoint;
-    ba::ip::udp::endpoint other_peer_endpoint;
+    ba::ip::udp::endpoint other_peer_send_endpoint;
+    ba::ip::udp::endpoint other_peer_receive_endpoint;
     ba::ip::udp::socket _receive_socket;
     ba::ip::udp::socket _send_socket;
     std::set<message_block> file_set;
