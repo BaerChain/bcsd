@@ -5,6 +5,7 @@
 #include <plugin_get.hpp>
 #include <plugin_check.hpp>
 #include <plugin_init.hpp>
+#include <plugin_net.hpp>
 
 int main( int argc, char** argv ) {
   try {
@@ -12,6 +13,7 @@ int main( int argc, char** argv ) {
     appbase::app().register_plugin<plugin_get>();
     appbase::app().register_plugin<plugin_check>();
     appbase::app().register_plugin<plugin_init>();
+    appbase::app().register_plugin<plugin_net>();
     if( !appbase::app().initialize( argc, argv ) )
        return -1;
     appbase::app().startup();
