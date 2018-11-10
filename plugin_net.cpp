@@ -19,12 +19,14 @@ void plugin_net::plugin_initialize( const variables_map& options )
         peer_or_server = options["run_as"].as<string>();
         _port = options["port"].as<unsigned short>();
     }
+    // 读取最初的节点信息，以后要是有公网的铁定不动的节点，可以写到程序里，现在暂时写配置文件
 }
 void plugin_net::plugin_startup()
 {
     ba::io_service ios;
     peer peer_local(ios, _port);
     peer_local.store_path = "..";
+    peer_local.node_id = peer_or_server;
     boost::thread thread_of_input(boost::bind(get_input, &peer_local));
     ios.run();
 }
