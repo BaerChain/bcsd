@@ -37,8 +37,22 @@ void peer::process_receive(const boost::system::error_code &ec)
         std::cout << "this message is char" << std::endl;
         std::string string_temp(mb.value, mb.size);
         std::cout << string_temp << std::endl;
-        if(strncmp(string_temp.c_str(), "getfile:", 8) == 0){
+        if(strncmp(string_temp.c_str(), "getfile:", 8) == 0){   // 请求文件，在本地查找文件是否存在，存在返回消息，不存在就跳过
             std::cout << "in getfile" << std::endl;
+            char str_file_path[127];
+    		strcpy(str_file_path, string_temp.c_str());
+            char *cmd = strtok(str_file_path, ":");
+    		char *file_path_char = strtok(NULL, ":");
+            char buf[256] = "";
+            sprintf(buf, "exist:%s", file_path_char);
+            if(bfs::exists(file_path_char)){
+                send_string_message(buf, other_peer_send_endpoint);
+            }
+            /*std::cout << "file_path: " << file_path_char << std::endl;
+            bfs::path file_path = file_path_char;
+            transfer_file(file_path);
+            std::cout << "file " << file_path_char << "is transfer complete!" << std::endl;*/
+        }else if(strncmp(string_temp.c_str(), "transfer:", 9) == 0){    // 收到这个消息头表示正式开始传文件
             char str_file_path[127];
     		strcpy(str_file_path, string_temp.c_str());
             char *cmd = strtok(str_file_path, ":");
@@ -47,7 +61,7 @@ void peer::process_receive(const boost::system::error_code &ec)
             bfs::path file_path = file_path_char;
             transfer_file(file_path);
             std::cout << "file " << file_path_char << "is transfer complete!" << std::endl;
-        }else if(strncmp(string_temp.c_str(), "getnode:", 8) == 0){
+        }else if(strncmp(string_temp.c_str(), "getnode:", 8) == 0){ // 这里表示同步本地节点存储的节点数据到请求的节点
             char buf[1024] = "";
             sprintf(buf, "node:%s:%s:%u", node_id.c_str(), _receive_socket.local_endpoint().address().to_string().c_str(), _receive_socket.local_endpoint().port());
             std::cout << "buf is:" << buf << std::endl;
@@ -71,6 +85,11 @@ void peer::process_receive(const boost::system::error_code &ec)
             std::cout << "receive node is: " << node << " " << ip << " " << port << std::endl;
             list_node_endpoint.insert(std::pair<std::string, ba::ip::udp::endpoint>(node, other_peer_send_endpoint));*/
             insert_node(string_temp);
+        }else if(strncmp(string_temp.c_str(), "exist:", 6) == 0){   // 对方回应文件存在，就去请求文件
+            // 这里还需要后续收到的存在信号不再生效
+            char buf[256] = "";
+            sprintf(buf, "transfer:%s", string_temp.c_str() + 6);
+            send_string_message(buf, other_peer_send_endpoint);
         }
     }else{ //如果传的是文件
         std::cout << "this message is binary" << std::endl;
@@ -121,7 +140,10 @@ void peer::connect_peer(ba::ip::udp::endpoint other_receive_endpoint)
         }else if(strncmp(_write_message.c_str(), ":out", 5) == 0){
             break;
         }else if(strncmp(_write_message.c_str(), "getfile:", 8) == 0){
-            
+            std::map<std::string, ba::ip::udp::endpoint>::iterator it;
+            for(it = list_node_endpoint.begin(); it != list_node_endpoint.end(); it++){
+                send_string_message("_write_message.c_str()", it->second);
+            }
         }else{
             message_block tmp;
             tmp.message_type = type_of_message;
