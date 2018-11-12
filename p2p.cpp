@@ -59,15 +59,15 @@ void peer::process_receive(const boost::system::error_code &ec)
     		char *file_path_char = strtok(NULL, ":");
             std::cout << "file_path: " << file_path_char << std::endl;
             bfs::path file_path = file_path_char;
-            transfer_file(file_path);
-            std::cout << "file " << file_path_char << "is transfer complete!" << std::endl;
-        }else if(strncmp(string_temp.c_str(), "getnode:", 8) == 0){ // 这里表示同步本地节点存储的节点数据到请求的节点
+            transfer_file(file_path, other_peer_send_endpoint);
+            std::cout << "file " << file_path_char << " is transfer complete!" << std::endl;
+        }else if(strncmp(string_temp.c_str(), "getnode:", 8) == 0){ // 这里表示同步本地节点的节点数据到请求的节点
             char buf[1024] = "";
             sprintf(buf, "node:%s:%s:%u", node_id.c_str(), _receive_socket.local_endpoint().address().to_string().c_str(), _receive_socket.local_endpoint().port());
             std::cout << "buf is:" << buf << std::endl;
             
             send_string_message(buf, other_peer_send_endpoint);
-        }else if(strncmp(string_temp.c_str(), "getallnode:", 11) == 0){
+        }else if(strncmp(string_temp.c_str(), "getallnode:", 11) == 0){ // 这里表示同步本地节点存储的所有节点数据到请求的节点
             std::map<std::string, ba::ip::udp::endpoint>::iterator it;
             for(it = list_node_endpoint.begin(); it != list_node_endpoint.end(); it++){
                 char buf[1024] = "";
@@ -122,8 +122,8 @@ void peer::connect_peer(std::string other_peer_ip, unsigned short other_peer_por
 }
 void peer::connect_peer(ba::ip::udp::endpoint other_receive_endpoint)
 {
-    std::cout << "1111peer address:" << other_receive_endpoint.address().to_string() << std::endl;
-    std::cout << "1111peer port:" << other_receive_endpoint.port() << std::endl;
+    std::cout << "connect_peer address:" << other_receive_endpoint.address().to_string() << std::endl;
+    std::cout << "connect_peer port:" << other_receive_endpoint.port() << std::endl;
     other_peer_receive_endpoint = other_receive_endpoint;
 	//_send_socket.open(ba::ip::udp::v4());
     send_string_message("getnode:", other_receive_endpoint);
@@ -142,7 +142,7 @@ void peer::connect_peer(ba::ip::udp::endpoint other_receive_endpoint)
         }else if(strncmp(_write_message.c_str(), "getfile:", 8) == 0){
             std::map<std::string, ba::ip::udp::endpoint>::iterator it;
             for(it = list_node_endpoint.begin(); it != list_node_endpoint.end(); it++){
-                send_string_message("_write_message.c_str()", it->second);
+                send_string_message(_write_message.c_str(), it->second);
             }
         }else{
             message_block tmp;
@@ -207,6 +207,8 @@ int peer::transfer_file(bfs::path transfer_file_path)
 // 给指定的节点发送文件
 int peer::transfer_file(bfs::path transfer_file_path, ba::ip::udp::endpoint othre_node_endpoint)
 {
+    std::cout << "transfer_file sock:" << _receive_socket.local_endpoint().address().to_string() << ":" << _receive_socket.local_endpoint().port() << std::endl;
+    std::cout << "transfer_file server:" << othre_node_endpoint.address().to_string() << ":" << othre_node_endpoint.port() << std::endl;
     bfs::path file_path = transfer_file_path;
     int file_size_int = bfs::file_size(file_path);
     bfs::fstream file_stream;
@@ -221,18 +223,20 @@ int peer::transfer_file(bfs::path transfer_file_path, ba::ip::udp::endpoint othr
         tmp.size = file_stream.gcount();
         file_read_size += tmp.size;
         tmp.message_type = type_of_file;
+        tmp.is_end = false;
         std::cout << "read_size:" << file_read_size << " " << "size total:" << file_size_int << std::endl;
         if(file_read_size == file_size_int){
             tmp.is_end = true;
         }
         strcpy(tmp.file_name, file_path.filename().string().c_str());
         memcpy(tmp.value, file_block_buf, tmp.size);
-        
+        std::cout << "end flag is:" << tmp.is_end << std::endl;
         transfer_data((void *)&tmp, sizeof(tmp), othre_node_endpoint);
         if(tmp.is_end){
             break;
         }
     }
+    std::cout << "transfer_file is end" << std::endl;
     return 0;
 }
 
