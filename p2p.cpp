@@ -7,6 +7,9 @@ peer::peer(ba::io_service &ios, unsigned short peer_port)
     //, _send_socket(ios)
 {
     std::cout << peer_port << std::endl;
+    leveldb_path = "./local";
+    config_path = "../kv_config.json";
+    leveldb_control.init_db(leveldb_path.string().c_str(), config_path.string().c_str());
     session_receive();
 }
 
@@ -43,11 +46,18 @@ void peer::process_receive(const boost::system::error_code &ec)
     		strcpy(str_file_path, string_temp.c_str());
             char *cmd = strtok(str_file_path, ":");
     		char *file_path_char = strtok(NULL, ":");
+            std::string file_hash = file_path_char;
             char buf[256] = "";
             sprintf(buf, "exist:%s", file_path_char);
-            if(bfs::exists(file_path_char)){
+            string json_content;
+            leveldb_control.get_message(file_hash, json_content);
+            std::cout << "json_content:" << json_content << std::endl;
+            if(!json_content.empty()){
                 send_string_message(buf, other_peer_send_endpoint);
             }
+            /*if(bfs::exists(file_path_char)){ // 本地文件校验存在与否
+                send_string_message(buf, other_peer_send_endpoint);
+            }*/
             /*std::cout << "file_path: " << file_path_char << std::endl;
             bfs::path file_path = file_path_char;
             transfer_file(file_path);
@@ -59,7 +69,12 @@ void peer::process_receive(const boost::system::error_code &ec)
     		char *file_path_char = strtok(NULL, ":");
             std::cout << "file_path: " << file_path_char << std::endl;
             bfs::path file_path = file_path_char;
-            transfer_file(file_path, other_peer_send_endpoint);
+            string json_content;
+            std::string file_hash = file_path_char;
+
+            leveldb_control.get_message(file_hash, json_content);
+            send_string_message(json_content.c_str(), other_peer_send_endpoint);
+            //transfer_file(file_path, other_peer_send_endpoint);
             std::cout << "file " << file_path_char << " is transfer complete!" << std::endl;
         }else if(strncmp(string_temp.c_str(), "getnode:", 8) == 0){ // 这里表示同步本地节点的节点数据到请求的节点
             char buf[1024] = "";
@@ -137,9 +152,9 @@ void peer::connect_peer(ba::ip::udp::endpoint other_receive_endpoint)
             std::cout << "file_path: " << file_path_char << std::endl;
             bfs::path file_path = file_path_char;
             transfer_file(file_path);
-        }else if(strncmp(_write_message.c_str(), ":out", 5) == 0){
+        }else if(strncmp(_write_message.c_str(), ":out", 5) == 0){  // 退出当前连接，本地仍然存储，只是退出会话
             break;
-        }else if(strncmp(_write_message.c_str(), "getfile:", 8) == 0){
+        }else if(strncmp(_write_message.c_str(), "getfile:", 8) == 0){ //给当前维护的所有endpoint发送获取文件的消息
             std::map<std::string, ba::ip::udp::endpoint>::iterator it;
             for(it = list_node_endpoint.begin(); it != list_node_endpoint.end(); it++){
                 send_string_message(_write_message.c_str(), it->second);
@@ -246,11 +261,32 @@ int peer::send_string_message(const char * string_message, ba::ip::udp::endpoint
     std::cout << "in send_string_message" << std::endl;
     message_block tmp;
     tmp.message_type = type_of_message;
+
+    // 后续处理消息超出目前的1024字节的问题
+    tmp.index = 0;
+    tmp.max_index = 0;
     strcpy(tmp.value, string_message);
     tmp.size = strlen(string_message);
     transfer_data((void *)&tmp, sizeof(tmp), other_node_endpoint);
     return 0;
 }
+
+// 把返回的节点id对应的ip地址和端口存到map里，暂时消息必须是node:开头并中间用冒号隔开的才能解析
+int peer::insert_node(std::string &node_info)
+{
+    char node_info_str[1024] = "";
+    strcpy(node_info_str, node_info.c_str() + 5);
+    char *node = strtok(node_info_str, ":");
+    char *ip = strtok(NULL, ":");
+	char *port = strtok(NULL, ":");
+    std::cout << "node information is: " << node << " " << ip << " " << port << std::endl;
+    unsigned short port_short = atoi(port);
+    ba::ip::udp::endpoint ep(ba::ip::address::from_string(ip), port_short);
+    // 如果节点存在的话就覆盖原来的endpoint，不存在的话就加入新的
+    list_node_endpoint[node] = ep;
+    return 0;
+}
+
 // 获取用户输入的操作命令
 void get_input(peer * pr)
 {
@@ -269,18 +305,3 @@ void get_input(peer * pr)
     }
 }
 
-// 把返回的节点id对应的ip地址和端口存到map里，暂时消息必须是node:开头并中间用冒号隔开的才能解析
-int peer::insert_node(std::string &node_info)
-{
-    char node_info_str[1024] = "";
-    strcpy(node_info_str, node_info.c_str() + 5);
-    char *node = strtok(node_info_str, ":");
-    char *ip = strtok(NULL, ":");
-	char *port = strtok(NULL, ":");
-    std::cout << "node information is: " << node << " " << ip << " " << port << std::endl;
-    unsigned short port_short = atoi(port);
-    ba::ip::udp::endpoint ep(ba::ip::address::from_string(ip), port_short);
-    // 如果节点存在的话就覆盖原来的endpoint，不存在的话就加入新的
-    list_node_endpoint[node] = ep;
-    return 0;
-}

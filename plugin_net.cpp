@@ -20,6 +20,8 @@ void plugin_net::plugin_initialize( const variables_map& options )
         _port = options["port"].as<unsigned short>();
     }
     // 读取最初的节点信息，以后要是有公网的铁定不动的节点，可以写到程序里，现在暂时写配置文件
+
+    
 }
 void plugin_net::plugin_startup()
 {

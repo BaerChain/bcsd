@@ -7,8 +7,10 @@
 #include <string>
 #include <set>
 #include <typeinfo>
+#include <tools.hpp>
+#include <first_level_db.hpp>
 
-namespace bfs = boost::filesystem;
+//namespace bfs = boost::filesystem;
 namespace ba = boost::asio;
 
 enum enum_message_type {type_of_file, type_of_message};
@@ -17,6 +19,7 @@ enum enum_message_type {type_of_file, type_of_message};
 struct message_block
 {
 	int index;                          // 块序号
+    int max_index;                      // 最大序号：当块序号等于最大序号，表示文件传输完成，最大序号还可用于检测文件是否丢包
     int size;                           // value的大小，不包括\0
     bool is_end;                        // 传文件时是否为最后一块 true:是最后一块 false:不是
     char file_name[65];                 // 被传文件的文件名
@@ -74,6 +77,11 @@ class peer
     std::set<message_block> file_set;
     char receive_buf[1500];
     std::map<std::string, ba::ip::udp::endpoint> list_node_endpoint;
+
+    // leveldb需要的
+    CFirstLevelDb leveldb_control;
+    bfs::path leveldb_path;
+    bfs::path config_path;
 };
 
 void get_input(peer * pr);

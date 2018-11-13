@@ -17,4 +17,6 @@ class plugin_net : public appbase::plugin<plugin_net>
     string peer_or_server;
     string ip_address;
     unsigned short _port;
+    bfs::path leveldb_path;
+    bfs::path config_path;
 };
