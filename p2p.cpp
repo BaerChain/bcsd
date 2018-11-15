@@ -65,6 +65,22 @@ void peer::tcp_process_receive(ba::ip::tcp::socket * current_socket)
     content_info receive_content;
     current_socket->read_some(ba::buffer(&receive_content, sizeof(content_info)));
     if(receive_content.message_type == type_of_message){
+        if(strncmp(receive_content.content, "getallkey:", 10) == 0){
+            std::cout << "in get all key" << std::endl;
+            std::map<string, string> all_kv;
+            leveldb_control.get_all(all_kv);
+            std::map<string, string>::iterator it;
+            int i = 0;
+            for(it = all_kv.begin(); it != all_kv.end(); it++){
+                std::cout << "in all kv " << i << std::endl;
+                std::cout << it->first << " " << it->second << std::endl;
+                /*content_info content;
+                content.content_size = it->second.length();
+                strcpy(content.key, it->first.c_str());
+                strncpy(content.content, it->second.c_str(), content.content.size);
+                */
+            }
+        }
         std::cout << receive_content.content << std::endl;
     }
     /*bfs::path file_path = "./4.jpg";
