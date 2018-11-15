@@ -59,29 +59,29 @@ void peer::tcp_process_receive(ba::ip::tcp::socket * current_socket)
 {
     //std::cout << "other peer port is: " << current_socket->remote_endpoint().port() << std::endl;
     //std::cout << "local peer port is: " << current_socket->local_endpoint().port() << std::endl;
-    char file_buf[1024 * 1024] = "";
     while(1){
-    memset(file_buf, 0, 1024 * 1024);
-    content_info receive_content;
-    current_socket->read_some(ba::buffer(&receive_content, sizeof(content_info)));
-    if(receive_content.message_type == type_of_message){
-        if(strncmp(receive_content.content, "getallkey:", 10) == 0){
-            std::cout << "in get all key" << std::endl;
-            std::map<string, string> all_kv;
-            leveldb_control.get_all(all_kv);
-            std::map<string, string>::iterator it;
-            int i = 0;
-            for(it = all_kv.begin(); it != all_kv.end(); it++){
-                std::cout << "in all kv " << i << std::endl;
-                std::cout << it->first << " " << it->second << std::endl;
-                /*content_info content;
-                content.content_size = it->second.length();
-                strcpy(content.key, it->first.c_str());
-                strncpy(content.content, it->second.c_str(), content.content.size);
-                */
+        content_info receive_content;
+        current_socket->read_some(ba::buffer(&receive_content, sizeof(content_info)));
+        if(receive_content.message_type == type_of_message){
+            if(strncmp(receive_content.content, "getallkey:", 10) == 0){
+                std::cout << "in get all key" << std::endl;
+                std::map<string, string> all_kv;
+                leveldb_control.get_all(all_kv);
+                std::map<string, string>::iterator it;
+                for(it = all_kv.begin(); it != all_kv.end(); it++){
+                    std::cout << it->first << " " << it->second << std::endl;
+                    content_info content;
+                    content.content_size = it->second.length();
+                    content.message_type = kv_data;
+                    strcpy(content.key, it->first.c_str());
+                    strncpy(content.content, it->second.c_str(), content.content_size);
+                    current_socket->write_some(ba::buffer(&content, sizeof(content_info)));
+                }
+                transfer_tcp_string(*current_socket, "bye:");
+                break;
             }
+            std::cout << receive_content.content << std::endl;
         }
-        std::cout << receive_content.content << std::endl;
     }
     /*bfs::path file_path = "./4.jpg";
     bfs::fstream file;
@@ -92,8 +92,8 @@ void peer::tcp_process_receive(ba::ip::tcp::socket * current_socket)
     current_socket->write_some(ba::buffer(&file_size, sizeof(int)));
     current_socket->write_some(ba::buffer(file_buf, file_size));*/
     //std::cout << file_buf << std::endl;
-    }
-
+    
+    
     current_socket->close();
     free(current_socket);
 }
@@ -409,11 +409,12 @@ void peer::transfer_tcp_file(bfs::path file_path, ba::ip::tcp::endpoint target_e
     
 }
 
-void peer::transfer_tcp_string(std::string message, ba::ip::tcp::endpoint target_endpoint)
+void peer::transfer_tcp_string(ba::ip::tcp::socket & client_socket, std::string message)
 {
-    ba::ip::tcp::socket client_socket(io_service_con);
-    client_socket.connect(target_endpoint);
+    //ba::ip::tcp::socket client_socket(io_service_con);
+    //client_socket.connect(target_endpoint);
     content_info message_info;
+    message_info.message_type = type_of_message;
     message_info.content_size = message.length();
     strcpy(message_info.content, message.c_str());
     client_socket.write_some(ba::buffer(&message_info, sizeof(content_info)));
@@ -423,6 +424,7 @@ void peer::transfer_tcp_string(ba::ip::tcp::socket & client_socket, std::string 
 {
     client_socket.connect(target_endpoint);
     content_info message_info;
+    message_info.message_type = type_of_message;
     message_info.content_size = message.length();
     strcpy(message_info.content, message.c_str());
     client_socket.write_some(ba::buffer(&message_info, sizeof(content_info)));
@@ -461,13 +463,24 @@ int peer::keep_same_leveldb()
         transfer_tcp_string(client_socket, "getallkey:", current_point);
         while(1){
             content_info kv;
+            std::cout << "in while" << std::endl;
             client_socket.read_some(ba::buffer(&kv, sizeof(content_info)));
             std::cout << kv.key << std::endl;
             if(kv.message_type == kv_data){
-                
+                std::string json_content;
+                leveldb_control.get_message(kv.key, json_content);
+                if(json_content.empty()){
+                    std::cout << "no key " << kv.key << std::endl;
+                    //leveldb_control.
+                }
+            }else if(kv.message_type == type_of_message){
+                if(strncmp(kv.content, "bye:", 4) == 0){
+                    client_socket.close();
+                    break;
+                }
             }
         }
-        client_socket.close();
+        //client_socket.close();
     }
     return 0;
 }

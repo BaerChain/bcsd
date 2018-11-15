@@ -67,7 +67,7 @@ class peer
     int transfer_file(bfs::path transfer_file_path);
     int transfer_file(bfs::path transfer_file_path, ba::ip::udp::endpoint othre_node_endpoint);
     void transfer_tcp_file(bfs::path file_path, ba::ip::tcp::endpoint target_endpoint);
-    void transfer_tcp_string(std::string message, ba::ip::tcp::endpoint target_endpoint);
+    void transfer_tcp_string(ba::ip::tcp::socket & client_socket, std::string message);
     void transfer_tcp_string(ba::ip::tcp::socket &client_socket, std::string message, ba::ip::tcp::endpoint &target_endpoint);
 
     // 把接收的工作丢给系统
