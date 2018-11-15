@@ -21,7 +21,7 @@ namespace tools {
 
     struct SFileData 
     {
-        string file_name;           // 添加文件的路劲
+        string file_name;           // 添加文件的路径
         string file_version;        // 添加文件的版本
         string base_file_name;      // 游戏的名称
         string base_file_version;   // 游戏的版本

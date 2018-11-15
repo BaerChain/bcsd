@@ -4,7 +4,8 @@
 peer::peer(ba::io_service &ios, unsigned short peer_port) 
     : io_service_con(ios)
     , tcp_ourself_endpoint(ba::ip::tcp::endpoint(ba::ip::tcp::v4(), peer_port))
-    , _receive_socket(ios, ba::ip::udp::endpoint(ba::ip::udp::v4(), peer_port))
+    , ourself_endpoint(ba::ip::udp::endpoint(ba::ip::udp::v4(), peer_port))
+    , _receive_socket(ios, ourself_endpoint)
     //, server_socket(ios)
     , server_acceptor(ios, tcp_ourself_endpoint)
     //, _send_socket(ios)
@@ -356,8 +357,11 @@ int peer::insert_node(std::string &node_info)
     std::cout << "node information is: " << node << " " << ip << " " << port << std::endl;
     unsigned short port_short = atoi(port);
     ba::ip::udp::endpoint ep(ba::ip::address::from_string(ip), port_short);
-    // 如果节点存在的话就覆盖原来的endpoint，不存在的话就加入新的
-    list_node_endpoint[node] = ep;
+    if(ep != ourself_endpoint){
+        // 如果节点存在的话就覆盖原来的endpoint，不存在的话就加入新的
+        list_node_endpoint[node] = ep;
+    }
+    
     return 0;
 }
 
@@ -447,8 +451,9 @@ int peer::load_config(bfs::path config_path)
         char * node_id = strtok(node_info_char, ":");
         char * ip = strtok(NULL, ":");
         char * port = strtok(NULL, ":");
-
+        printf("node_id:%p, ip:%p, port:%p", node_id, ip, port);
         if(node_id != NULL && ip != NULL && port != NULL){
+            std::cout << "inset node in to list" << std::endl;
             unsigned short port_short = atoi(port);
             ba::ip::udp::endpoint ep(ba::ip::address::from_string(ip), port_short);
             list_node_endpoint[node_id] = ep;
@@ -465,19 +470,26 @@ int peer::keep_same_leveldb()
     for(it = list_node_endpoint.begin(); it != list_node_endpoint.end(); it++){
         ba::ip::tcp::endpoint current_point;
         udp2tcp(it->second, current_point);
+        char buf[1024] = "";
+        sprintf(buf, "node:%s:%s:%u", node_id.c_str(), _receive_socket.local_endpoint().address().to_string().c_str(), _receive_socket.local_endpoint().port());
+        std::cout << "buf is:" << buf << std::endl;
+        send_string_message(buf, other_peer_send_endpoint); 
+        send_string_message("getallnode:", it->second); // 同步公共点的节点表
         transfer_tcp_string(client_socket, "getallkey:", current_point);
         while(1){
             content_info kv;
             std::cout << "in while" << std::endl;
             client_socket.read_some(ba::buffer(&kv, sizeof(content_info)));
-            std::cout << kv.key << std::endl;
-            std::cout << kv.content << std::endl;
+            std::cout << "key:" << kv.key << std::endl;
+            std::cout << "value:" << kv.content << std::endl;
             if(kv.message_type == kv_data){
                 std::string json_content;
                 leveldb_control.get_message(kv.key, json_content);
                 if(json_content.empty()){
                     std::cout << "no key " << kv.key << std::endl;
                     leveldb_control.insert_key_value(kv.key, kv.content);
+                }else{
+                    continue;
                 }
             }else if(kv.message_type == type_of_message){
                 if(strncmp(kv.content, "bye:", 4) == 0){
@@ -495,5 +507,11 @@ int peer::udp2tcp(ba::ip::udp::endpoint &src, ba::ip::tcp::endpoint &des)
 {
     ba::ip::tcp::endpoint tcp_endpoint(src.address(), src.port());
     des = tcp_endpoint;
+    return 0;
+}
+int tcp2udp(ba::ip::tcp::endpoint &src, ba::ip::udp::endpoint &des)
+{
+    ba::ip::udp::endpoint udp_endpoint(src.address(), src.port());
+    des = udp_endpoint;
     return 0;
 }

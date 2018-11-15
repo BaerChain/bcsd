@@ -89,6 +89,8 @@ class peer
 
     // udp::endpoint 转 tcp::endpoint
     int udp2tcp(ba::ip::udp::endpoint &src, ba::ip::tcp::endpoint &des);
+    // tcp::endpoint 转 udp::endpoint
+    int tcp2udp(ba::ip::tcp::endpoint &src, ba::ip::udp::endpoint &des);
 
     // 把node：命令传输过来的节点id和对应的endpoint存到当前程序
     int insert_node(std::string &node_info);
