@@ -26,6 +26,8 @@ struct SLevelSaveKV
     int kv_id;              // 每个kv的id
 };
 
+//区分文件key 和索引key
+const std::string flag_hash = "file_hash@";
 class CFirstLevelDb
 {
 public:
@@ -38,6 +40,10 @@ private:
     int load_config(const char* file_name);
 
     tools::ESaveErrorCode put_new_kvs(const tools::SFileData& file_data);
+
+	void add_flag_hash(std::string& hash_str);
+	void del_flag_hash(std::string& hash_str);
+	bool is_flag_key(const std::string& key_str);
     
 public: 
     int delete_file(const std::string& key_string);
@@ -49,6 +55,8 @@ public:
     tools::ESaveErrorCode update_file_block_data(tools::SFileData& file_data, Json::Value& block_value);
 
     int get_message(const std::string& key_string, std::string& str_date);
+
+	void get_all(std::map<string, string>& value_map);
 
 private:
     leveldb::DB* db;

@@ -177,6 +177,31 @@ tools::ESaveErrorCode CFirstLevelDb::put_new_kvs(const tools::SFileData& file_da
     return tools::ESaveErrorCode::e_no_error;
 }
 
+void CFirstLevelDb::add_flag_hash(std::string & hash_str)
+{
+	hash_str = flag_hash + hash_str;
+}
+
+void CFirstLevelDb::del_flag_hash(std::string & hash_str)
+{
+	if (hash_str.length() <= flag_hash.length())
+		return;
+	//*****从i开始长度为pos-i的子字符串
+	int str_length = hash_str.length();
+	string str = hash_str.substr(flag_hash.length()-1, str_length - flag_hash.length());
+	hash_str = str;
+}
+
+bool CFirstLevelDb::is_flag_key(const std::string& key_str)
+{
+	if (key_str.length() <= flag_hash.length())
+		return	false;
+	string str = key_str.substr(0, flag_hash.length() - 1);
+	if (str == flag_hash)
+		return true;
+	return false;
+}
+
 //对外接口 加入新的file
 //计算file基本信息
 tools::ESaveErrorCode CFirstLevelDb::put_new_file(tools::SFileData& file_data)
@@ -214,6 +239,9 @@ tools::ESaveErrorCode CFirstLevelDb::put_new_file(tools::SFileData& file_data)
 
     file_data.file_value = fwrite.write(node);
     //std::cout << "file value in leveldb is: " << file_data.file_value << std::endl;
+
+	//添加flag
+	add_flag_hash(file_data.file_hash);
     return put_new_kvs(file_data);
 }
 
@@ -250,6 +278,9 @@ tools::ESaveErrorCode CFirstLevelDb::update_file_block_data(tools::SFileData& fi
         root.removeMember("block");
     root["block"] = block_value;
     file_data.file_value = fwrite.write(root);
+
+	//add flag
+	add_flag_hash(file_data.file_hash);
     return update_file(&file_data);
 }
 
@@ -257,9 +288,29 @@ tools::ESaveErrorCode CFirstLevelDb::update_file_block_data(tools::SFileData& fi
 // str_date 输出查询结果
 int CFirstLevelDb::get_message(const std::string & key_string, std::string& str_date)
 {
+	// 判断key是否添加了 flag 
+
     status = db->Get(leveldb::ReadOptions(), key_string, &str_date);
-    //assert(status.ok());
+	if (status.ok())
+		return 0;
+	//加 falg
+	str_date.clear();
+	std::string str_key = key_string;
+	add_flag_hash(str_key);
+	status = db->Get(leveldb::ReadOptions(), str_key, &str_date);
+
     return 0;
+}
+void CFirstLevelDb::get_all(std::map<string, string>& value_map)
+{
+	leveldb::Iterator* it = db->NewIterator(leveldb::ReadOptions());
+	for (it->SeekToFirst(); it->Valid(); it->Next()) {
+		//cout << it->key().ToString() << ": " << it->value().ToString() << endl;
+		if(is_flag_key(it->key().ToString()))
+			value_map[it->key().ToString()] = it->value().ToString();
+	}
+	//assert(it->status().ok());  // Check for any errors found during the scan
+	delete it;
 }
 int CFirstLevelDb::delete_file(const std::string& key_string)
 {
