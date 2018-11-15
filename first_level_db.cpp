@@ -195,10 +195,16 @@ void CFirstLevelDb::del_flag_hash(std::string & hash_str)
 bool CFirstLevelDb::is_flag_key(const std::string& key_str)
 {
 	if (key_str.length() <= flag_hash.length())
+	{
+		cout << "size error" << endl;
 		return	false;
+	}
 	string str = key_str.substr(0, flag_hash.length() - 1);
 	if (str == flag_hash)
+	{
 		return true;
+	}
+	cout << " not peer" << endl;
 	return false;
 }
 
@@ -306,8 +312,14 @@ void CFirstLevelDb::get_all(std::map<string, string>& value_map)
 	leveldb::Iterator* it = db->NewIterator(leveldb::ReadOptions());
 	for (it->SeekToFirst(); it->Valid(); it->Next()) {
 		//cout << it->key().ToString() << ": " << it->value().ToString() << endl;
-		if(is_flag_key(it->key().ToString()))
-			value_map[it->key().ToString()] = it->value().ToString();
+		if (is_flag_key(it->key().ToString()))
+		{
+			string map_key = it->key().ToString();
+			del_flag_hash(map_key);
+			value_map[map_key] = it->value().ToString();
+
+			cout << value_map[map_key] << endl;
+		}
 	}
 	//assert(it->status().ok());  // Check for any errors found during the scan
 	delete it;
