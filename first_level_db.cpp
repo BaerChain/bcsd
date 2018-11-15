@@ -188,7 +188,7 @@ void CFirstLevelDb::del_flag_hash(std::string & hash_str)
 		return;
 	//*****从i开始长度为pos-i的子字符串
 	int str_length = hash_str.length();
-	string str = hash_str.substr(flag_hash.length(), str_length - flag_hash.length());
+	string str = hash_str.substr(flag_hash.length()-1, str_length - flag_hash.length());
 	hash_str = str;
 }
 
@@ -196,16 +196,15 @@ bool CFirstLevelDb::is_flag_key(const std::string& key_str)
 {
 	if (key_str.length() <= flag_hash.length())
 	{
-		//cout << "size error" << endl;
+		cout << "size error" << endl;
 		return	false;
 	}
-	string str = key_str.substr(0, flag_hash.length());
-    //cout << "str is " << str << endl;
+	string str = key_str.substr(0, flag_hash.length() - 1);
 	if (str == flag_hash)
 	{
 		return true;
 	}
-	//cout << " not peer" << endl;
+	cout << " not peer" << endl;
 	return false;
 }
 
@@ -319,11 +318,20 @@ void CFirstLevelDb::get_all(std::map<string, string>& value_map)
 			del_flag_hash(map_key);
 			value_map[map_key] = it->value().ToString();
 
-			//cout << value_map[map_key] << endl;
+			cout << value_map[map_key] << endl;
 		}
 	}
 	//assert(it->status().ok());  // Check for any errors found during the scan
 	delete it;
+}
+
+tools::ESaveErrorCode CFirstLevelDb::insert_key_value(std::string key_string, const std::string value_string)
+{
+	add_flag_hash(key_string);
+	status = db->Put(leveldb::WriteOptions(), key_string, value_string);
+	if (status.ok())
+		return tools::ESaveErrorCode::e_no_error;
+	return tools::ESaveErrorCode::e_leveldb_save_error;
 }
 int CFirstLevelDb::delete_file(const std::string& key_string)
 {

@@ -13,7 +13,7 @@
 //namespace bfs = boost::filesystem;
 namespace ba = boost::asio;
 
-enum enum_message_type {type_of_file, type_of_message, kv_data};
+enum enum_message_type {type_of_file, type_of_message};
 
 // 现在只处理了包块顺序的问题，丢包问题还没处理
 struct message_block
@@ -33,25 +33,13 @@ struct message_block
 	}
 };
 
-struct content_info
-{
-    int content_size = 0;
-    enum_message_type message_type = type_of_message;     // 消息类型 type_of_file:传文件 type_of_message:传字符串 kv_data:传键值对
-    char key[128] = "";
-    char content[1024 * 1024] = "";
-};
-
 struct node_info
 {
     char node_id[65];
     ba::ip::udp::endpoint node_endpoint;
 };
 
-struct file_info
-{
-    bool exist_flag = false;
-    std::set<message_block> file_set;
-};
+
 
 class peer
 {
@@ -66,50 +54,29 @@ class peer
     int transfer_data(void * buf, int len, ba::ip::udp::endpoint this_ask_endpoint);
     int transfer_file(bfs::path transfer_file_path);
     int transfer_file(bfs::path transfer_file_path, ba::ip::udp::endpoint othre_node_endpoint);
-    void transfer_tcp_file(bfs::path file_path, ba::ip::tcp::endpoint target_endpoint);
-    void transfer_tcp_string(ba::ip::tcp::socket & client_socket, std::string message);
-    void transfer_tcp_string(ba::ip::tcp::socket &client_socket, std::string message, ba::ip::tcp::endpoint &target_endpoint);
 
     // 把接收的工作丢给系统
-    void session_udp_receive();
-    void session_tcp_receive();
+    void session_receive();
     // 接收到数据后系统回调的函数，用来处理接收到的数据
     void process_receive(const boost::system::error_code &ec);
-    void tcp_process_link(ba::ip::tcp::socket * new_socket, const boost::system::error_code &ec);
-    void tcp_process_receive(ba::ip::tcp::socket * current_socket);
 
     // 发送字符串消息
     int send_string_message(const char * string_message, ba::ip::udp::endpoint other_node_endpoint);
-
-    // 读取配置文件里的公共节点的数据
-    int load_config(bfs::path config_path);
-
-    // 同步L0
-    int keep_same_leveldb();
-
-    // udp::endpoint 转 tcp::endpoint
-    int udp2tcp(ba::ip::udp::endpoint &src, ba::ip::tcp::endpoint &des);
 
     // 把node：命令传输过来的节点id和对应的endpoint存到当前程序
     int insert_node(std::string &node_info);
     bfs::path store_path;
     ba::io_service &io_service_con;
     std::string node_id;
-    ba::ip::tcp::endpoint tcp_ourself_endpoint;
-
   private:
     ba::ip::udp::endpoint ourself_endpoint;
-    
     ba::ip::udp::endpoint other_peer_send_endpoint;
     ba::ip::udp::endpoint other_peer_receive_endpoint;
     ba::ip::udp::socket _receive_socket;
-    //ba::ip::tcp::socket server_socket;
-    ba::ip::tcp::acceptor server_acceptor;
     //ba::ip::udp::socket _send_socket;
     std::set<message_block> file_set;
     char receive_buf[1500];
     std::map<std::string, ba::ip::udp::endpoint> list_node_endpoint;
-    std::map<std::string, file_info> list_file;
 
     // leveldb需要的
     CFirstLevelDb leveldb_control;

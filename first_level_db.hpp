@@ -55,8 +55,9 @@ public:
     tools::ESaveErrorCode update_file_block_data(tools::SFileData& file_data, Json::Value& block_value);
 
     int get_message(const std::string& key_string, std::string& str_date);
-
 	void get_all(std::map<string, string>& value_map);
+
+	tools::ESaveErrorCode insert_key_value(std::string key_string, const std::string value_string);
 
 private:
     leveldb::DB* db;
