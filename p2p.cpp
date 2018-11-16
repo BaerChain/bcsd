@@ -1,4 +1,6 @@
 #include <p2p.hpp>
+#include <boost/algorithm/string/split.hpp>
+#include <plugin_check.hpp>
 
 // 构造函数，生成接收端的socket，然后把接收的回调函数提给系统
 peer::peer(ba::io_service &ios, unsigned short peer_port) 
@@ -157,7 +159,38 @@ void peer::process_receive(const boost::system::error_code &ec)
             bfs::path file_path = file_path_char;
             transfer_file(file_path);
             std::cout << "file " << file_path_char << "is transfer complete!" << std::endl;*/
-        }else if(strncmp(string_temp.c_str(), "transfer:", 9) == 0){    // 收到这个消息头表示正式开始传文件
+        }
+		else if (mb.message_type == check)
+		{
+			//挑战
+			std::string order_str= std::string(mb.value);
+			bpo::variables_map options;
+			//得到 hash
+			// _order = "check_file:" + check_file + "|" + "offset:" + offset + "|" + "length:" + length;
+			vector<string> vStr;
+			tools::SplitString(order_str, vStr, "|");
+			std::string check_file;
+			std::string offset;
+			std::string length;
+			for (int i=0; i<vStr.size(); i++)
+			{
+				if (vStr[i].find("check_file"))
+					check_file = vStr[i].substr(strlen("check_file")+1, vStr[i].length());
+				else if (vStr[i].find("offset"))
+					offset = vStr[i].substr(strlen("offset")+1, vStr[i].length());
+				else if (vStr[i].find("length"))
+					length = vStr[i].substr(strlen("offset")+1, vStr[i].length());
+			}
+			string hash_str;
+			auto* m_check = new plugin_check();
+			m_check->initialize(options);
+			m_check->set_optins(check_file, offset, length);
+			hash_str = m_check->get_offset_hash();
+			delete m_check;
+			send_string_message(hash_str.c_str(), other_peer_send_endpoint);
+			
+		}
+		else if(strncmp(string_temp.c_str(), "transfer:", 9) == 0){    // 收到这个消息头表示正式开始传文件
             char str_file_path[127];
     		strcpy(str_file_path, string_temp.c_str() + 9);
             //char *cmd = strtok(str_file_path, ":");
@@ -393,9 +426,65 @@ void get_input(peer * pr)
     pr->keep_same_leveldb();
     //int flag = 0;
     ba::ip::tcp::socket client_socket(pr->io_service_con);
-    while(std::getline(std::cin, _write_message)){
-        std::cout << "your input is: " << _write_message << std::endl;
-        if(strncmp(_write_message.c_str(), "peer:", 5) == 0){
+	std::cout << " please commend to start some mode:\n" \
+		"--challenge							-- start file challenge service\n" \
+		"\n" << std::endl;
+    while(std::getline(std::cin, _write_message))
+	{
+        std::cout << "your input is: \n" << _write_message << std::endl;
+		if(strncmp(_write_message.c_str(), "--challenge", 5) == 0)
+		{
+			std::cout << " please paramers to challenge eg:\n" \
+				"nodeid=(string)_node check_file=(string)_check_file offset=(int)_offset length=(int)_length" << std::endl;
+			
+			while (true)
+			{
+				std::string nodeid;
+				std::string check_file;
+				std::string offset;
+				std::string length;
+				std::string _order;
+
+				string temp_order;
+				std::getline(std::cin, temp_order);
+				if (temp_order.find("quit ") == 0)
+				{
+					break;
+				}
+
+				vector<string> vStr;
+				tools::SplitString(temp_order, vStr, " ");
+				for (int i=0; i< vStr.size(); i++)
+				{
+					int op_size = vStr[i].length();
+					if (vStr[i].find("check_file"))
+						check_file = vStr[i].substr(strlen("check_file") + 1, op_size);
+					else if (vStr[i].find("offset"))
+						offset = vStr[i].substr(strlen("offset") + 1, op_size);
+					else if (vStr[i].find("length"))
+						length = vStr[i].substr(strlen("length") + 1, op_size);
+					else if (vStr[i].find("nodeid"))
+						nodeid = vStr[i].substr(strlen("nodeid") + 1, op_size);
+				}
+				_order = "check_file:" + check_file + "|" + "offset:" + offset + "|" + "length:" + length;
+				std::cout << "order:[" << _order << "]" << std::endl;
+				
+				std::string result_str = pr->challenge(client_socket, nodeid, _order);
+				std::cout << "result_str:[" << result_str <<"]" << std::endl;
+
+				//校验
+				bpo::variables_map options;
+				auto* m_check = new plugin_check();
+				m_check->initialize(options);
+				m_check->set_optins(check_file, offset, length);
+				std::string result_owner = m_check->get_offset_hash();
+
+				std::cout << "result_owner:[" << result_owner << "]" << std::endl;
+				delete m_check;
+			}
+
+		}
+		else if(strncmp(_write_message.c_str(), "peer:", 5) == 0){
             char str_endpoint[127];
     		strcpy(str_endpoint, _write_message.c_str() + 5);
     		char *peer_ip = strtok(str_endpoint, ":");
@@ -429,6 +518,7 @@ void get_input(peer * pr)
                 file.close();
             }
         }
+		_write_message.clear();
     }
 }
 
@@ -574,6 +664,45 @@ int peer::get_file_in_key(std::string root_json, ba::ip::tcp::endpoint current_p
     transfer_tcp_string(client_socket, "bye:");
     client_socket.close();
     return 0;
+}
+std::string  peer::challenge(ba::ip::tcp::socket& _socket, ba::ip::tcp::endpoint &target_endpoint, const std::string& _order)
+{
+	if (!_socket.is_open())
+	{
+		_socket = ba::ip::tcp::socket(io_service_con);
+		_socket.connect(target_endpoint);
+	}
+	message_block message_info;
+	message_info.message_type = check;
+	message_info.size = _order.length();
+	strcpy(message_info.value, _order.c_str());
+	_socket.write_some(ba::buffer(&message_info, sizeof(content_info)));
+	
+	std::string result_str;
+	while (true)
+	{
+		//等待接收
+		content_info _data;
+		_socket.read_some(ba::buffer(&_data, sizeof(content_info)));
+		std::cout << _data.content << std::endl;
+
+		result_str =std::string(_data.content);
+		if (_data.message_type == check)
+			break;
+	}
+	return result_str;
+}
+
+std::string peer::challenge(ba::ip::tcp::socket& _socket, const std::string _nodeid, const std::string _order)
+{
+	if (list_node_endpoint.find(node_id) == list_node_endpoint.end())
+	{
+		std::cout << "cant't find node_id[" << node_id << "]" << std::endl;
+		return std::string();
+	}
+	ba::ip::tcp::endpoint current_point;
+	udp2tcp(list_node_endpoint[node_id], current_point);
+	return challenge(_socket, current_point, _order);
 }
 
 int peer::udp2tcp(ba::ip::udp::endpoint &src, ba::ip::tcp::endpoint &des)

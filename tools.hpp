@@ -58,4 +58,7 @@ namespace tools {
 
     // 偏移量后的指定长度计算sha256的值
     int offset_to_hash(bfs::fstream& file_check, int offset_num, int length_num, char res[]);
+
+	//string 分割 一个char 包含' '
+	void SplitString(const string& s, vector<string>& v, const string& c);
 }

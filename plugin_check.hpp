@@ -12,8 +12,9 @@ class plugin_check : public appbase::plugin<plugin_check>
     void plugin_startup();
     void plugin_shutdown();
     
-    void get_offset_hash();
+	std::string get_offset_hash();
     void get_block_offset_hash();
+	void set_optins(const std::string _check, const std::string _offset, const std::string& _length);
   private:
     CFirstLevelDb leveldb_control;  // 数据库接口
     bfs::path check_file_hash;      // 需要校验的文件的hash

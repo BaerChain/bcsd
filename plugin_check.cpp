@@ -36,7 +36,7 @@ void plugin_check::plugin_shutdown()
 }
 
 // 只是简单测试一下计算偏移后的数据的sha256，后面校验肯定不在这里，也不是这种方式
-void plugin_check::get_offset_hash()
+std::string plugin_check::get_offset_hash()
 {
     char buf_offset[length_of_calculate] = "";
     char buf_hash_result[65] = "";
@@ -54,7 +54,7 @@ void plugin_check::get_offset_hash()
         file_whole.read(buf_offset, length_of_calculate);   // 从指定的偏移位置读取指定的长度
         if(file_whole.gcount() != length_of_calculate){
             std::cout << "The file is not enough!" << std::endl;
-            return;
+            return std::string();
         }
         file_whole.close(); // 关闭文件
     } else {
@@ -133,7 +133,7 @@ void plugin_check::get_offset_hash()
     // 计算hash
     tools::sha_file_block(buf_offset, buf_hash_result, length_of_calculate);
     std::cout << "want to hash is " << buf_hash_result << std::endl;
-    return;
+    return std::string(buf_hash_result);
 }
 void plugin_check::get_block_offset_hash()
 {
@@ -152,4 +152,11 @@ void plugin_check::get_block_offset_hash()
     file_block.close();
     std::cout << "want to hash is " << string_hash_res << std::endl;
     return;
+}
+
+void plugin_check::set_optins(const std::string _check, const std::string _offset, const std::string & _length)
+{
+	check_file_hash = _check;
+	offset_of_file = std::stoll(_offset);
+	length_of_calculate = std::stoll(_length);
 }

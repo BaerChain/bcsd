@@ -13,7 +13,7 @@
 //namespace bfs = boost::filesystem;
 namespace ba = boost::asio;
 
-enum enum_message_type {type_of_file, type_of_message, kv_data};
+enum enum_message_type {type_of_file, type_of_message, kv_data, check,};
 
 // 现在只处理了包块顺序的问题，丢包问题还没处理
 struct message_block
@@ -88,6 +88,10 @@ class peer
     int keep_same_leveldb();
     // 获取json中的块文件
     int get_file_in_key(std::string root_json, ba::ip::tcp::endpoint current_point);
+
+	//check 
+	std::string challenge(ba::ip::tcp::socket& _socket, ba::ip::tcp::endpoint &target_endpoint, const std::string& _order);
+	std::string challenge(ba::ip::tcp::socket& _socket, const std::string _nodeid, const std::string _order);
 
     // udp::endpoint 转 tcp::endpoint
     int udp2tcp(ba::ip::udp::endpoint &src, ba::ip::tcp::endpoint &des);
