@@ -78,7 +78,8 @@ void peer::tcp_process_receive(ba::ip::tcp::socket * current_socket)
                     content.message_type = kv_data;
                     strcpy(content.key, it->first.c_str());
                     strncpy(content.content, it->second.c_str(), content.content_size);
-                    current_socket->write_some(ba::buffer(&content, sizeof(content_info)));
+                    int re = current_socket->write_some(ba::buffer(&content, sizeof(content_info)));
+                    std::cout << "write some re is " << re << std::endl;
                 }
                 transfer_tcp_string(*current_socket, "bye:");
                 break;
@@ -473,13 +474,15 @@ int peer::keep_same_leveldb()
         char buf[1024] = "";
         sprintf(buf, "node:%s:%s:%u", node_id.c_str(), _receive_socket.local_endpoint().address().to_string().c_str(), _receive_socket.local_endpoint().port());
         std::cout << "buf is:" << buf << std::endl;
-        send_string_message(buf, other_peer_send_endpoint); 
+        send_string_message(buf, it->second); 
         send_string_message("getallnode:", it->second); // 同步公共点的节点表
         transfer_tcp_string(client_socket, "getallkey:", current_point);
         while(1){
             content_info kv;
             std::cout << "in while" << std::endl;
-            client_socket.read_some(ba::buffer(&kv, sizeof(content_info)));
+            int re = ba::read(client_socket, ba::buffer(&kv, sizeof(content_info)));
+            //int re = client_socket.read(ba::buffer(&kv, sizeof(content_info)));
+            std::cout << "read_some re is " << re << " sizeof content_info is " << sizeof(content_info) << std::endl;
             std::cout << "key:" << kv.key << std::endl;
             std::cout << "value:" << kv.content << std::endl;
             if(kv.message_type == kv_data){
@@ -493,6 +496,9 @@ int peer::keep_same_leveldb()
                 }
             }else if(kv.message_type == type_of_message){
                 if(strncmp(kv.content, "bye:", 4) == 0){
+                    client_socket.close();
+                    break;
+                }else{
                     client_socket.close();
                     break;
                 }
