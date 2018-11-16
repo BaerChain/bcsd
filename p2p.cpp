@@ -471,11 +471,13 @@ int peer::keep_same_leveldb()
     for(it = list_node_endpoint.begin(); it != list_node_endpoint.end(); it++){
         ba::ip::tcp::endpoint current_point;
         udp2tcp(it->second, current_point);
+        send_string_message("getallnode:", it->second); // 同步公共点的节点表
+        // 发送自己的信息给对方
         char buf[1024] = "";
         sprintf(buf, "node:%s:%s:%u", node_id.c_str(), _receive_socket.local_endpoint().address().to_string().c_str(), _receive_socket.local_endpoint().port());
         std::cout << "buf is:" << buf << std::endl;
         send_string_message(buf, it->second); 
-        send_string_message("getallnode:", it->second); // 同步公共点的节点表
+        
         transfer_tcp_string(client_socket, "getallkey:", current_point);
         while(1){
             content_info kv;
@@ -485,6 +487,7 @@ int peer::keep_same_leveldb()
             std::cout << "read_some re is " << re << " sizeof content_info is " << sizeof(content_info) << std::endl;
             std::cout << "key:" << kv.key << std::endl;
             std::cout << "value:" << kv.content << std::endl;
+            get_file_in_key(kv.content);
             if(kv.message_type == kv_data){
                 std::string json_content;
                 leveldb_control.get_message(kv.key, json_content);
@@ -506,6 +509,15 @@ int peer::keep_same_leveldb()
         }
         //client_socket.close();
     }
+    return 0;
+}
+
+int peer::get_file_in_key(std::string root_json)
+{
+    Json::Reader root_reader;
+    Json::Value node;
+    root_reader.parse(root_json, node);
+    std::cout << node["name"] << std::endl;
     return 0;
 }
 

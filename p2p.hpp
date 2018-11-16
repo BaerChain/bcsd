@@ -87,6 +87,8 @@ class peer
     // 同步L0
     int keep_same_leveldb();
 
+    int get_file_in_key(std::string root_json);
+
     // udp::endpoint 转 tcp::endpoint
     int udp2tcp(ba::ip::udp::endpoint &src, ba::ip::tcp::endpoint &des);
     // tcp::endpoint 转 udp::endpoint
