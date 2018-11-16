@@ -62,7 +62,9 @@ void peer::tcp_process_receive(ba::ip::tcp::socket * current_socket)
     //std::cout << "local peer port is: " << current_socket->local_endpoint().port() << std::endl;
     while(1){
         content_info receive_content;
-        current_socket->read_some(ba::buffer(&receive_content, sizeof(content_info)));
+        int re = ba::read(*current_socket, ba::buffer(&receive_content, sizeof(content_info)));
+        //current_socket->read_some(ba::buffer(&receive_content, sizeof(content_info)));
+        std::cout << "receive size is " << re << " content is " << receive_content.content << std::endl;
         if(receive_content.message_type == type_of_message){
             if(strncmp(receive_content.content, "getallkey:", 10) == 0){
                 std::cout << "in get all key" << std::endl;
@@ -82,6 +84,24 @@ void peer::tcp_process_receive(ba::ip::tcp::socket * current_socket)
                     std::cout << "write some re is " << re << std::endl;
                 }
                 transfer_tcp_string(*current_socket, "bye:");
+                break;
+            }else if(strncmp(receive_content.content, "getblock:", 9) == 0){
+                char file_hash[65] = "";
+                char path_char[80] = "";
+                strncpy(file_hash, receive_content.content + 9, 64);
+                bfs::path block_path = store_path;
+                block_path /= "L2";
+                tools::sha_to_path(file_hash, path_char);
+                block_path /= path_char;
+                block_path /= file_hash;
+
+                std::cout << "file path is " << block_path << std::endl;
+                if(bfs::exists(block_path)){
+                    std::cout << "-----file is exist, path is " << block_path << std::endl;
+                    transfer_tcp_file(*current_socket, block_path);
+                }
+                
+            }else if(strncmp(receive_content.content, "bye:", 4) == 0){
                 break;
             }
             std::cout << receive_content.content << std::endl;
@@ -412,11 +432,18 @@ void get_input(peer * pr)
     }
 }
 
-void peer::transfer_tcp_file(bfs::path file_path, ba::ip::tcp::endpoint target_endpoint)
+void peer::transfer_tcp_file(ba::ip::tcp::socket & client_socket, bfs::path file_path)
 {
-    ba::ip::tcp::socket client_socket(io_service_con);
-    client_socket.connect(target_endpoint);
-    
+    //ba::ip::tcp::socket client_socket(io_service_con);
+    //client_socket.connect(target_endpoint);
+    bfs::fstream file;
+    content_info send_content;
+    file.open(file_path, std::ios::binary | std::ios::in);
+    send_content.content_size = bfs::file_size(file_path);
+    send_content.message_type = type_of_file;
+    file.read(send_content.content, send_content.content_size);
+    client_socket.write_some(ba::buffer(&send_content, sizeof(content_info)));
+    file.close();
 }
 
 void peer::transfer_tcp_string(ba::ip::tcp::socket & client_socket, std::string message)
@@ -487,13 +514,14 @@ int peer::keep_same_leveldb()
             std::cout << "read_some re is " << re << " sizeof content_info is " << sizeof(content_info) << std::endl;
             std::cout << "key:" << kv.key << std::endl;
             std::cout << "value:" << kv.content << std::endl;
-            get_file_in_key(kv.content);
+            
             if(kv.message_type == kv_data){
                 std::string json_content;
                 leveldb_control.get_message(kv.key, json_content);
                 if(json_content.empty()){
                     std::cout << "no key " << kv.key << std::endl;
                     leveldb_control.insert_key_value(kv.key, kv.content);
+                    get_file_in_key(kv.content, current_point);
                 }else{
                     continue;
                 }
@@ -512,12 +540,39 @@ int peer::keep_same_leveldb()
     return 0;
 }
 
-int peer::get_file_in_key(std::string root_json)
+int peer::get_file_in_key(std::string root_json, ba::ip::tcp::endpoint current_point)
 {
+    ba::ip::tcp::socket client_socket(io_service_con);
+    client_socket.connect(current_point);
     Json::Reader root_reader;
     Json::Value node;
     root_reader.parse(root_json, node);
-    std::cout << node["name"] << std::endl;
+    Json::Value block_array = node["block"];
+    unsigned int i = 0;
+    for(; i < block_array.size(); i++) {
+        content_info block_info;
+        std::string getblock = "getblock:";
+        getblock += block_array[i]["value"].asString();
+        std::cout << getblock << std::endl;
+        transfer_tcp_string(client_socket, getblock);
+        ba::read(client_socket, ba::buffer(&block_info, sizeof(content_info)));
+        
+        char file_hash[65] = "";
+        char path_char[80] = "";
+        strncpy(file_hash, block_array[i]["value"].asString().c_str(), 64);
+        bfs::path block_path = store_path;
+        block_path /= "L2";
+        tools::sha_to_path(file_hash, path_char);
+        block_path /= path_char;
+        block_path /= file_hash;
+
+        bfs::fstream block_file;
+        block_file.open(block_path, std::ios::binary | std::ios::out);
+        block_file.write(block_info.content, block_info.content_size);
+        block_file.close();
+    }
+    transfer_tcp_string(client_socket, "bye:");
+    client_socket.close();
     return 0;
 }
 

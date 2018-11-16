@@ -31,7 +31,7 @@ void plugin_net::plugin_startup()
     if(bfs::exists(config_path)){
         peer_local.load_config(config_path);
     }
-    peer_local.store_path = "..";
+    peer_local.store_path = ".";
     peer_local.node_id = peer_or_server;
     boost::thread thread_of_input(boost::bind(get_input, &peer_local));
     ios.run();

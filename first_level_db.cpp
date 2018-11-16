@@ -248,13 +248,16 @@ tools::ESaveErrorCode CFirstLevelDb::put_new_file(tools::SFileData& file_data)
 
 	//添加flag
 	add_flag_hash(file_data.file_hash);
-    return put_new_kvs(file_data);
+    tools::ESaveErrorCode ret =  put_new_kvs(file_data);
+    del_flag_hash(file_data.file_hash);
+    return ret;
 }
 
 tools::ESaveErrorCode CFirstLevelDb::update_file(const tools::SFileData* file_data)
 {
     //更新文件，只需要更新文件存储信息，不需要更新索引
     //检查文件hash 存在更新，不存在失败
+    std::cout << file_data->file_hash << std::endl;
     string temp_value;
     status = db->Get(leveldb::ReadOptions(),file_data->file_hash, &temp_value);
     if (!status.ok())
@@ -287,7 +290,9 @@ tools::ESaveErrorCode CFirstLevelDb::update_file_block_data(tools::SFileData& fi
 
 	//add flag
 	add_flag_hash(file_data.file_hash);
-    return update_file(&file_data);
+    tools::ESaveErrorCode ret = update_file(&file_data);
+    del_flag_hash(file_data.file_hash);
+    return ret;
 }
 
 // key_string 查询key值

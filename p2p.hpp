@@ -66,7 +66,7 @@ class peer
     int transfer_data(void * buf, int len, ba::ip::udp::endpoint this_ask_endpoint);
     int transfer_file(bfs::path transfer_file_path);
     int transfer_file(bfs::path transfer_file_path, ba::ip::udp::endpoint othre_node_endpoint);
-    void transfer_tcp_file(bfs::path file_path, ba::ip::tcp::endpoint target_endpoint);
+    void transfer_tcp_file(ba::ip::tcp::socket & client_socket, bfs::path file_path);
     void transfer_tcp_string(ba::ip::tcp::socket & client_socket, std::string message);
     void transfer_tcp_string(ba::ip::tcp::socket &client_socket, std::string message, ba::ip::tcp::endpoint &target_endpoint);
 
@@ -86,8 +86,8 @@ class peer
 
     // 同步L0
     int keep_same_leveldb();
-
-    int get_file_in_key(std::string root_json);
+    // 获取json中的块文件
+    int get_file_in_key(std::string root_json, ba::ip::tcp::endpoint current_point);
 
     // udp::endpoint 转 tcp::endpoint
     int udp2tcp(ba::ip::udp::endpoint &src, ba::ip::tcp::endpoint &des);
