@@ -90,7 +90,7 @@ class peer
     int get_file_in_key(std::string root_json, ba::ip::tcp::endpoint current_point);
 
 	//check 
-	std::string challenge(ba::ip::tcp::socket& _socket, ba::ip::tcp::endpoint &target_endpoint, const std::string& _order);
+	std::string challenge(ba::ip::tcp::socket& _socket, ba::ip::tcp::endpoint target_endpoint, const std::string& _order);
 	std::string challenge(ba::ip::tcp::socket& _socket, const std::string _nodeid, const std::string _order);
 
     // udp::endpoint 转 tcp::endpoint
