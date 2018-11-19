@@ -1,6 +1,7 @@
 #include <p2p.hpp>
 #include <boost/algorithm/string/split.hpp>
 #include <plugin_check.hpp>
+#include <exception>
 
 // 构造函数，生成接收端的socket，然后把接收的回调函数提给系统
 peer::peer(ba::io_service &ios, unsigned short peer_port) 
@@ -167,6 +168,7 @@ void peer::process_receive(const boost::system::error_code &ec)
 			bpo::variables_map options;
 			//得到 hash
 			// _order = "check_file:" + check_file + "|" + "offset:" + offset + "|" + "length:" + length;
+			cout << "get mesage order : " << order_str << endl;
 			vector<string> vStr;
 			tools::SplitString(order_str, vStr, "|");
 			std::string check_file;
@@ -434,8 +436,9 @@ void get_input(peer * pr)
         std::cout << "your input is: \n" << _write_message << std::endl;
 		if(strncmp(_write_message.c_str(), "--challenge", 5) == 0)
 		{
-			std::cout << " please paramers to challenge eg:\n" \
-				"nodeid=(string)_node check_file=(string)_check_file offset=(int)_offset length=(int)_length" << std::endl;
+			std::cout << " input quit to out this mode ... \n" \
+				"please paramers to challenge eg:\n" \
+				"-n=(string)_node -c=(string)_check_file -f=(int)_offset -l=(int)_length \n"<< std::endl;
 			
 			while (true)
 			{
@@ -447,25 +450,30 @@ void get_input(peer * pr)
 
 				string temp_order;
 				std::getline(std::cin, temp_order);
-				if (temp_order.find("quit ") == 0)
+				if (temp_order.find("quit") == 0)
 				{
 					break;
 				}
-
 				vector<string> vStr;
 				tools::SplitString(temp_order, vStr, " ");
-				for (int i=0; i< vStr.size(); i++)
+				for (int i = 0; i < vStr.size(); i++)
 				{
 					int op_size = vStr[i].length();
-					if (vStr[i].find("check_file"))
-						check_file = vStr[i].substr(strlen("check_file") + 1, op_size);
-					else if (vStr[i].find("offset"))
-						offset = vStr[i].substr(strlen("offset") + 1, op_size);
-					else if (vStr[i].find("length"))
-						length = vStr[i].substr(strlen("length") + 1, op_size);
-					else if (vStr[i].find("nodeid"))
-						nodeid = vStr[i].substr(strlen("nodeid") + 1, op_size);
+					if (std::string::npos != vStr[i].find("-c"))
+						check_file = vStr[i].substr(strlen("-c") + 1, op_size);
+					else if (std::string::npos != vStr[i].find("-f"))
+						offset = vStr[i].substr(strlen("-f") + 1, op_size);
+					else if (std::string::npos != vStr[i].find("-l"))
+						length = vStr[i].substr(strlen("-l") + 1, op_size);
+					else if (std::string::npos != vStr[i].find("-n"))
+						nodeid = vStr[i].substr(strlen("-n") + 1, op_size);
 				}
+				if (check_file.empty() || offset.empty() || length.empty() || nodeid.empty())
+				{
+					cout << " input the commend  is error ... please input twice" << endl;
+					continue;
+				}
+			
 				_order = "check_file:" + check_file + "|" + "offset:" + offset + "|" + "length:" + length;
 				std::cout << "order:[" << _order << "]" << std::endl;
 				
@@ -665,11 +673,11 @@ int peer::get_file_in_key(std::string root_json, ba::ip::tcp::endpoint current_p
     client_socket.close();
     return 0;
 }
-std::string  peer::challenge(ba::ip::tcp::socket& _socket, ba::ip::tcp::endpoint target_endpoint, const std::string& _order)
+std::string  peer::challenge(ba::ip::tcp::socket& _socket, ba::ip::tcp::endpoint &target_endpoint, const std::string& _order)
 {
 	if (!_socket.is_open())
 	{
-		//_socket = ba::ip::tcp::socket(io_service_con);
+		_socket = ba::ip::tcp::socket(io_service_con);
 		_socket.connect(target_endpoint);
 	}
 	message_block message_info;
@@ -695,9 +703,9 @@ std::string  peer::challenge(ba::ip::tcp::socket& _socket, ba::ip::tcp::endpoint
 
 std::string peer::challenge(ba::ip::tcp::socket& _socket, const std::string _nodeid, const std::string _order)
 {
-	if (list_node_endpoint.find(node_id) == list_node_endpoint.end())
+	if (list_node_endpoint.find(_nodeid) == list_node_endpoint.end())
 	{
-		std::cout << "cant't find node_id[" << node_id << "]" << std::endl;
+		std::cout << "cant't find node_id[" << _nodeid << "]" << std::endl;
 		return std::string();
 	}
 	ba::ip::tcp::endpoint current_point;
