@@ -675,15 +675,17 @@ int peer::get_file_in_key(std::string root_json, ba::ip::tcp::endpoint current_p
 }
 std::string  peer::challenge(ba::ip::tcp::socket& _socket, ba::ip::tcp::endpoint &target_endpoint, const std::string& _order)
 {
+    std::cout << "in challenge" << std::endl;
 	if (!_socket.is_open())
 	{
-		_socket = ba::ip::tcp::socket(io_service_con);
+		//_socket = ba::ip::tcp::socket(io_service_con);
 		_socket.connect(target_endpoint);
 	}
 	message_block message_info;
 	message_info.message_type = check;
 	message_info.size = _order.length();
 	strcpy(message_info.value, _order.c_str());
+    std::cout << "will be write" << std::endl;
 	_socket.write_some(ba::buffer(&message_info, sizeof(content_info)));
 	
 	std::string result_str;
@@ -709,7 +711,7 @@ std::string peer::challenge(ba::ip::tcp::socket& _socket, const std::string _nod
 		return std::string();
 	}
 	ba::ip::tcp::endpoint current_point;
-	udp2tcp(list_node_endpoint[node_id], current_point);
+	udp2tcp(list_node_endpoint[_nodeid], current_point);
 	return challenge(_socket, current_point, _order);
 }
 
