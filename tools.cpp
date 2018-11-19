@@ -157,11 +157,16 @@ string tools::SFileData::get_value(const string& str) const
 }
 void tools::SplitString(const string& s, vector<string>& v, const string& c)
 {
+	if (s.empty())
+		return;
+	v.clear();
 	string::size_type pos1, pos2;
+	//从0位置开始查找子字符串c第一次出现的位置
 	pos2 = s.find(c);
 	pos1 = 0;
 	while (string::npos != pos2)
 	{
+		//pos为起始位置，n次获取 
 		v.push_back(s.substr(pos1, pos2 - pos1));
 
 		pos1 = pos2 + c.size();
@@ -169,4 +174,5 @@ void tools::SplitString(const string& s, vector<string>& v, const string& c)
 	}
 	if (pos1 != s.length())
 		v.push_back(s.substr(pos1));
+
 }
