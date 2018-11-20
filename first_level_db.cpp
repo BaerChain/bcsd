@@ -14,10 +14,17 @@ CFirstLevelDb::~CFirstLevelDb()
     }
 }
 
+CFirstLevelDb * CFirstLevelDb::get_single_level_db()
+{
+	static CFirstLevelDb p_level_db;
+	return &p_level_db;
+}
 
 int CFirstLevelDb::init_db(const char* name_db, const char* config_name)
 {
-    //options.create_if_missing = true;  //进行数据库二次打开检查
+	if (is_open())
+		close_db();
+    options.create_if_missing = true;  //进行数据库二次打开检查
     status = leveldb::DB::Open(options, name_db, &db);
     assert(status.ok());
     assert(load_config(config_name));

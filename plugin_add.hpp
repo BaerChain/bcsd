@@ -18,7 +18,7 @@ class plugin_add : public appbase::plugin<plugin_add>
     int cut_block();
 
   private:
-    CFirstLevelDb leveldb_control;
+    CFirstLevelDb* leveldb_control;
     tools::SFileData _file_data;
     bfs::path leveldb_path;
     bfs::path config_path;

@@ -16,7 +16,7 @@ class plugin_check : public appbase::plugin<plugin_check>
     void get_block_offset_hash();
 	void set_optins(const std::string _check, const std::string _offset, const std::string& _length);
   private:
-    CFirstLevelDb leveldb_control;  // 数据库接口
+    CFirstLevelDb* leveldb_control;  // 数据库接口
     bfs::path check_file_hash;      // 需要校验的文件的hash
     long long offset_of_file;       // 从文件头开始的偏移量
     long long length_of_calculate;  // 需要计算的数据长度

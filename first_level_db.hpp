@@ -30,13 +30,20 @@ struct SLevelSaveKV
 const std::string flag_hash = "file_hash@";
 class CFirstLevelDb
 {
-public:
-    CFirstLevelDb();
-    ~CFirstLevelDb();
-    int init_db(const char* name_db, const char* config_name);
-    int close_db();
 private:
+    CFirstLevelDb();
 
+	CFirstLevelDb(const CFirstLevelDb&) {}
+	CFirstLevelDb& operator =(const CFirstLevelDb&) {  };
+    int close_db();
+public:
+	~CFirstLevelDb();
+	//得到之前连接的实例 也有可能是没有连接 接下来初始化
+	static CFirstLevelDb* get_single_level_db();
+	//重新初始化 L0 的数据库参数 以前的连接将会close
+	int init_db(const char* name_db, const char* config_name);
+	bool is_open() { return nullptr != db;  }
+public:
     int load_config(const char* file_name);
 
     tools::ESaveErrorCode put_new_kvs(const tools::SFileData& file_data);
@@ -67,5 +74,8 @@ private:
     Json::FastWriter fwrite;
     Json::Reader reader;
     vector<SLevelSaveKV> v_save_kv;
+	
+	//static pthread_mutex_t mutex;
+	//static CFirstLevelDb p_level_db; //单利模式
 };
 
