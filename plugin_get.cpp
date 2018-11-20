@@ -20,7 +20,9 @@ void plugin_get::plugin_initialize( const variables_map& options )
     leveldb_path /= "local";
     bfs::path config_path = root_path;
     config_path /= "../kv_config.json";
-    leveldb_control.init_db(leveldb_path.string().c_str(), config_path.string().c_str());
+	leveldb_control = CFirstLevelDb::get_single_level_db();
+	if(!leveldb_control->is_open())
+		leveldb_control->init_db(leveldb_path.string().c_str(), config_path.string().c_str());
     // 获取参数
     if(options.count("get_file")) {
         file_hash = options["get_file"].as<string>();
@@ -55,7 +57,7 @@ void plugin_get::plugin_shutdown()
 void plugin_get::get_config()
 {
     // 从leveldb获取用户请求的hash对应的json
-    leveldb_control.get_message(file_hash, json_content);
+    leveldb_control->get_message(file_hash, json_content);
     std::cout << "file config is: " << json_content << std::endl;
     return;
 }
@@ -76,7 +78,7 @@ void plugin_get::get_file()
     //    download_block();   // 后续注意下载失败的问题
     //}
     // 从leveldb获取用户请求的hash对应的json
-    leveldb_control.get_message(file_hash, json_content);
+    leveldb_control->get_message(file_hash, json_content);
     //buf << json_file.rdbuf();
     //json_content = buf.str();   // 把buf里的内容放到string里
     root_reader.parse(json_content, node);  // 解析json并交给node

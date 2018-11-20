@@ -16,7 +16,10 @@ peer::peer(ba::io_service &ios, unsigned short peer_port)
     std::cout << peer_port << std::endl;
     leveldb_path = "./local";
     config_path = "../kv_config.json";
-    leveldb_control.init_db(leveldb_path.string().c_str(), config_path.string().c_str());
+
+	leveldb_control = CFirstLevelDb::get_single_level_db();
+	if(!leveldb_control->is_open())
+		leveldb_control->init_db(leveldb_path.string().c_str(), config_path.string().c_str());
     session_udp_receive();
     session_tcp_receive();
 }
@@ -72,7 +75,7 @@ void peer::tcp_process_receive(ba::ip::tcp::socket * current_socket)
             if(strncmp(receive_content.content, "getallkey:", 10) == 0){
                 std::cout << "in get all key" << std::endl;
                 std::map<string, string> all_kv;
-                leveldb_control.get_all(all_kv);
+                leveldb_control->get_all(all_kv);
                 std::map<string, string>::iterator it;
                 int index = 1;
                 for(it = all_kv.begin(); it != all_kv.end(); it++){
@@ -183,7 +186,7 @@ void peer::process_receive(const boost::system::error_code &ec)
             char buf[256] = "";
             sprintf(buf, "exist:%s", str_file_path);
             string json_content;
-            leveldb_control.get_message(file_hash, json_content);
+            leveldb_control->get_message(file_hash, json_content);
             std::cout << "json_content:" << json_content << std::endl;
             if(!json_content.empty()){
                 send_string_message(buf, other_peer_send_endpoint);
@@ -237,7 +240,7 @@ void peer::process_receive(const boost::system::error_code &ec)
             string json_content;
             std::string file_hash = str_file_path;
 
-            leveldb_control.get_message(file_hash, json_content);
+            leveldb_control->get_message(file_hash, json_content);
             send_string_message(json_content.c_str(), other_peer_send_endpoint);
             //transfer_file(file_path, other_peer_send_endpoint);
             std::cout << "file " << str_file_path << " is transfer complete!" << std::endl;
@@ -714,10 +717,10 @@ int peer::keep_same_leveldb()
             
             if(kv.message_type == kv_data){
                 std::string json_content;
-                leveldb_control.get_message(kv.key, json_content);
+                leveldb_control->get_message(kv.key, json_content);
                 if(json_content.empty()){
                     std::cout << "no key " << kv.key << std::endl;
-                    leveldb_control.insert_key_value(kv.key, kv.content);
+                    leveldb_control->insert_key_value(kv.key, kv.content);
                     get_file_in_key(kv.content, current_point);
                 }else{
                     continue;

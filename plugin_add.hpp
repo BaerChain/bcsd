@@ -20,7 +20,7 @@ class plugin_add : public appbase::plugin<plugin_add>
     std::string get_file_hash();
 
   private:
-    CFirstLevelDb leveldb_control;
+    CFirstLevelDb* leveldb_control;
     tools::SFileData _file_data;
     bfs::path leveldb_path;
     bfs::path config_path;

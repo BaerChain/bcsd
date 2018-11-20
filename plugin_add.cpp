@@ -23,8 +23,11 @@ void plugin_add::plugin_initialize( const variables_map& options )
     root_path = ".";
     leveldb_path = "./local";
     config_path = "../kv_config.json";
-    leveldb_control.init_db(leveldb_path.string().c_str(), config_path.string().c_str());
-    leveldb_control.put_new_file(_file_data);
+
+	leveldb_control = CFirstLevelDb::get_single_level_db();
+	if(!leveldb_control->is_open())
+		leveldb_control->init_db(leveldb_path.string().c_str(), config_path.string().c_str());
+    leveldb_control->put_new_file(_file_data);
     std::cout << "file hash is:" << _file_data.file_hash << std::endl;
     //file_path = options["add_file"].as<std::string>();
     //game_name_string = options["game_name"].as<std::string>();
@@ -164,12 +167,12 @@ int plugin_add::cut_block()
         i++;
     }
     std::cout << "_file_data is: " << _file_data.file_value << std::endl;
-    leveldb_control.update_file_block_data(_file_data, block);
+    leveldb_control->update_file_block_data(_file_data, block);
     //node["block"] = block;
     string block_res = write_to_file.write(block);
     std::cout << "block res is: " << block_res << std::endl;
     string file_json_res;
-    leveldb_control.get_message(_file_data.file_hash, file_json_res);
+    leveldb_control->get_message(_file_data.file_hash, file_json_res);
     std::cout << "file json L0 is: " << file_json_res << std::endl;
     return i + 1;
 }

@@ -17,7 +17,10 @@ void plugin_check::plugin_initialize( const variables_map& options )
     leveldb_path /= "local";
     bfs::path config_path = root_path;
     config_path /= "../kv_config.json";
-    leveldb_control.init_db(leveldb_path.string().c_str(), config_path.string().c_str());
+
+	leveldb_control = CFirstLevelDb::get_single_level_db();
+	if(!leveldb_control->is_open())
+		leveldb_control->init_db(leveldb_path.string().c_str(), config_path.string().c_str());
     if(options.count("offset")) {
         check_file_hash = options["check_file"].as<string>();
         offset_of_file = options["offset"].as<long long>();
@@ -83,7 +86,7 @@ std::string plugin_check::get_offset_hash()
         //buf_json_file << file_json.rdbuf();
         //file_json.close(); // 关闭文件
         //json_content = buf_json_file.str();
-        leveldb_control.get_message(check_file_hash.string(), json_content);
+        leveldb_control->get_message(check_file_hash.string(), json_content);
         root_reader.parse(json_content, node);  // 解析json并交给node
         Json::Value json_array = node["block"]; // 取出块文件的信息
 

@@ -126,7 +126,7 @@ class peer
     std::map<std::string, file_info> list_file;
 
     // leveldb需要的
-    CFirstLevelDb leveldb_control;
+    CFirstLevelDb* leveldb_control;
     bfs::path leveldb_path;
     bfs::path config_path;
 };
