@@ -104,6 +104,18 @@ void peer::tcp_process_receive(ba::ip::tcp::socket * current_socket)
                     transfer_tcp_file(*current_socket, block_path);
                 }
                 
+            }else if(strncmp(receive_content.content, "getkey:", 7) == 0){  // 获取某个key的value
+                std::string file_hash(receive_content.content + 7, receive_content.content_size - 7);
+                std::string hash_value;
+                std::cout << "receive file hash is " << file_hash << std::endl;
+                leveldb_control.get_message(file_hash, hash_value);
+                if(!hash_value.empty()){
+                    // 存在的话就直接返回
+                    transfer_tcp_string(*current_socket, hash_value, kv_data);
+                }else{
+                    transfer_tcp_string(*current_socket, "bye:");
+                }
+                break;
             }else if(strncmp(receive_content.content, "bye:", 4) == 0){
                 break;
             }
@@ -124,6 +136,29 @@ void peer::tcp_process_receive(ba::ip::tcp::socket * current_socket)
     current_socket->close();
     free(current_socket);
 }
+
+void peer::tcp_get_value_and_block(std::string file_hash, ba::ip::tcp::endpoint other_peer_server_endpoint)
+{
+    std::cout << "in tcp_get_value_and_block file_hash is " << file_hash << " endpoint is " << other_peer_server_endpoint << std::endl;
+    ba::ip::tcp::socket current_socket(io_service_con);
+    current_socket.connect(other_peer_server_endpoint);
+    char get_value_of_file_hash[128] = "";
+    sprintf(get_value_of_file_hash, "getkey:%s", file_hash.c_str());
+    transfer_tcp_string(current_socket, get_value_of_file_hash);
+    content_info receive_buf;
+    ba::read(current_socket, ba::buffer(&receive_buf, sizeof(content_info)));
+    if(receive_buf.message_type == kv_data){
+        get_file_in_key(receive_buf.content, other_peer_server_endpoint);
+        // 本机同步数据后，也该给自己的节点表里的节点依次发送增加文件的消息
+        // to do！
+    }else if(receive_buf.message_type == type_of_message){
+        if(strncmp(receive_buf.content, "bye:", 4) == 0){
+            current_socket.close();
+        }
+    }
+    
+}
+
 // 处理接收到的数据
 void peer::process_receive(const boost::system::error_code &ec)
 {
@@ -235,8 +270,20 @@ void peer::process_receive(const boost::system::error_code &ec)
             char buf[256] = "";
             sprintf(buf, "transfer:%s", string_temp.c_str() + 6);
             send_string_message(buf, other_peer_send_endpoint);
+        }else if(strncmp(string_temp.c_str(), "addfile:", 8) == 0){   // 收到对方添加文件的消息
+            std::string json_content;
+            // 检查当前结点是否含有此文件，没有就去请求对方发送给自己
+            std::string file_hash(string_temp.c_str() + 8, string_temp.length() - 8);
+            std::cout << "file hash is " << file_hash << std::endl;
+            leveldb_control.get_message(file_hash, json_content);
+            if(json_content.empty()){
+                std::cout << "current key is not exist!" << std::endl;
+                ba::ip::tcp::endpoint other_tcp_server_endpoint;
+                udp2tcp(other_peer_send_endpoint, other_tcp_server_endpoint);
+                boost::thread(boost::bind(&peer::tcp_get_value_and_block, this, file_hash, other_tcp_server_endpoint));
+            }
         }
-    }else{ //如果传的是文件
+    }else{ //如果传的是文件 暂时udp传文件还没完善，后续传文件不用udp这套
         std::cout << "this message is binary" << std::endl;
         file_set.insert(mb);
         if(mb.is_end){
@@ -512,6 +559,25 @@ void get_input(peer * pr)
             client_socket.close();
         }else if(strncmp(_write_message.c_str(), "out:", 4) == 0){
             break;
+        }else if(strncmp(_write_message.c_str(), "add_file ", 9) == 0){
+            plugin_add add_file_contraler;
+            char node_info_char[256] = "";
+            strcpy(node_info_char, _write_message.c_str());
+            char * cmd = strtok(node_info_char, " ");
+            char * file = strtok(NULL, " ");
+        	cmd = strtok(NULL, " ");
+        	char * game_name = strtok(NULL, " ");
+        	cmd = strtok(NULL, " ");
+        	char * game_version = strtok(NULL, " ");
+            std::cout << cmd << " " << file << " " << game_name << " " << game_version << std::endl;
+            //add_file_contraler.set_initialize(file, game_name, game_version);
+            // 本地添加成功后，给自己本地存储的节点依次发送添加文件的命令
+            
+            //char cmd_add_file[128] = "";
+            //sprintf(cmd_add_file, "addfile:%s", add_file_contraler.get_file_hash().c_str());
+
+            char cmd_add_file[128] = "addfile:aceb111";
+            pr->udp_send_in_order(cmd_add_file);
         }else{
             if(client_socket.is_open()){
                 client_socket.write_some(ba::buffer(_write_message.c_str(), _write_message.length()));
@@ -528,6 +594,15 @@ void get_input(peer * pr)
         }
 		_write_message.clear();
     }
+}
+
+int peer::udp_send_in_order(std::string message)
+{
+    std::map<std::string, ba::ip::udp::endpoint>::iterator it;
+    for(it = list_node_endpoint.begin(); it != list_node_endpoint.end(); it++){
+        send_string_message(message.c_str(), it->second);
+    }
+    return 0;
 }
 
 void peer::transfer_tcp_file(ba::ip::tcp::socket & client_socket, bfs::path file_path)
@@ -555,9 +630,25 @@ void peer::transfer_tcp_string(ba::ip::tcp::socket & client_socket, std::string 
     client_socket.write_some(ba::buffer(&message_info, sizeof(content_info)));
 }
 
+void peer::transfer_tcp_string(ba::ip::tcp::socket & client_socket, std::string message, enum_message_type type)
+{
+    //ba::ip::tcp::socket client_socket(io_service_con);
+    //client_socket.connect(target_endpoint);
+    content_info message_info;
+    message_info.message_type = type;
+    message_info.content_size = message.length();
+    strcpy(message_info.content, message.c_str());
+    client_socket.write_some(ba::buffer(&message_info, sizeof(content_info)));
+}
+
 void peer::transfer_tcp_string(ba::ip::tcp::socket & client_socket, std::string message, ba::ip::tcp::endpoint &target_endpoint)
 {
-    client_socket.connect(target_endpoint);
+    boost::system::error_code error;
+    client_socket.connect(target_endpoint, error);
+    if(error){
+        std::cout << error.message() << std::endl;
+        throw 1;
+    }
     content_info message_info;
     message_info.message_type = type_of_message;
     message_info.content_size = message.length();
@@ -603,7 +694,15 @@ int peer::keep_same_leveldb()
         std::cout << "buf is:" << buf << std::endl;
         send_string_message(buf, it->second); 
         
-        transfer_tcp_string(client_socket, "getallkey:", current_point);
+        // 如果本地表里的endpoint连接不上，就跳到下一个，并显示，后续可以删除该条记录
+        try{
+            transfer_tcp_string(client_socket, "getallkey:", current_point);
+        }catch(int error_number){
+            if(1 == error_number){
+                std::cout << "connect to " << current_point << " is failed!" << std::endl;
+                continue;
+            }
+        }
         while(1){
             content_info kv;
             std::cout << "in while" << std::endl;

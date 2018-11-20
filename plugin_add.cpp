@@ -173,3 +173,24 @@ int plugin_add::cut_block()
     std::cout << "file json L0 is: " << file_json_res << std::endl;
     return i + 1;
 }
+
+int plugin_add::set_initialize(bfs::path add_file_path, std::string add_file_belong_game, std::string add_file_version)
+{
+    std::cout << "in set_initialize";
+    file_path = add_file_path;
+    game_name_string = add_file_belong_game;
+    game_version_string = add_file_version;
+    root_path = ".";
+    leveldb_path = "./local";
+    config_path = "../kv_config.json";
+    leveldb_control.init_db(leveldb_path.string().c_str(), config_path.string().c_str());
+    leveldb_control.put_new_file(_file_data);
+    std::cout << "file hash is:" << _file_data.file_hash << std::endl;
+
+    return 0;
+}
+
+std::string plugin_add::get_file_hash()
+{
+    return _file_data.file_hash;
+}

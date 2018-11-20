@@ -9,6 +9,7 @@
 #include <typeinfo>
 #include <tools.hpp>
 #include <first_level_db.hpp>
+#include <plugin_add.hpp>
 
 //namespace bfs = boost::filesystem;
 namespace ba = boost::asio;
@@ -69,6 +70,7 @@ class peer
     void transfer_tcp_file(ba::ip::tcp::socket & client_socket, bfs::path file_path);
     void transfer_tcp_string(ba::ip::tcp::socket & client_socket, std::string message);
     void transfer_tcp_string(ba::ip::tcp::socket &client_socket, std::string message, ba::ip::tcp::endpoint &target_endpoint);
+    void transfer_tcp_string(ba::ip::tcp::socket & client_socket, std::string message, enum_message_type type);
 
     // 把接收的工作丢给系统
     void session_udp_receive();
@@ -77,9 +79,13 @@ class peer
     void process_receive(const boost::system::error_code &ec);
     void tcp_process_link(ba::ip::tcp::socket * new_socket, const boost::system::error_code &ec);
     void tcp_process_receive(ba::ip::tcp::socket * current_socket);
+    // 获取文件hash请求对方，先获得对应的value，再依次获取文件块
+    void tcp_get_value_and_block(std::string file_hash, ba::ip::tcp::endpoint other_peer_server_endpoint);
 
     // 发送字符串消息
     int send_string_message(const char * string_message, ba::ip::udp::endpoint other_node_endpoint);
+    // 依次给当前节点列表中的节点发送消息
+    int udp_send_in_order(std::string message);
 
     // 读取配置文件里的公共节点的数据
     int load_config(bfs::path config_path);

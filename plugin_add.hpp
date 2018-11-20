@@ -16,6 +16,8 @@ class plugin_add : public appbase::plugin<plugin_add>
 
     int root_dir();
     int cut_block();
+    int set_initialize(bfs::path add_file_path, std::string add_file_belong_game, std::string add_file_version);
+    std::string get_file_hash();
 
   private:
     CFirstLevelDb leveldb_control;
