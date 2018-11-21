@@ -226,9 +226,10 @@ tools::ESaveErrorCode CFirstLevelDb::put_new_file(tools::SFileData& file_data)
     tools::sha_file(file_stream, hash_ret);
     file_data.file_hash = string(hash_ret);
     string temp_value;
-	cout << "start find same hsah..." << endl;
+
+	//添加flag
+	add_flag_hash(hash_ret);
     status = db->Get(leveldb::ReadOptions(), hash_ret, &temp_value);
-	cout << "end find same hsah..." << endl;
 
     if (status.ok())
     {
@@ -259,6 +260,7 @@ tools::ESaveErrorCode CFirstLevelDb::put_new_file(tools::SFileData& file_data)
 	//添加flag
 	add_flag_hash(file_data.file_hash);
     tools::ESaveErrorCode ret =  put_new_kvs(file_data);
+	//去除flag
     del_flag_hash(file_data.file_hash);
     return ret;
 }
