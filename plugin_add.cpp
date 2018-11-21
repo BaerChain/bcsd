@@ -186,7 +186,8 @@ int plugin_add::set_initialize(std::string add_file_path, std::string add_file_b
     leveldb_control = leveldb_pointer;
     leveldb_control->put_new_file(_file_data);
     std::cout << "file hash is:" << _file_data.file_hash << std::endl;
-
+    plugin_startup();
+    plugin_shutdown();
     return 0;
 }
 

@@ -70,7 +70,7 @@ class peer
     void transfer_tcp_file(ba::ip::tcp::socket & client_socket, bfs::path file_path);
     void transfer_tcp_string(ba::ip::tcp::socket & client_socket, std::string message);
     void transfer_tcp_string(ba::ip::tcp::socket &client_socket, std::string message, ba::ip::tcp::endpoint &target_endpoint);
-    void transfer_tcp_string(ba::ip::tcp::socket & client_socket, std::string message, enum_message_type type);
+    void transfer_tcp_string(ba::ip::tcp::socket & client_socket, std::string key, std::string message, enum_message_type type);
 
     // 把接收的工作丢给系统
     void session_udp_receive();

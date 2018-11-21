@@ -114,7 +114,7 @@ void peer::tcp_process_receive(ba::ip::tcp::socket * current_socket)
                 leveldb_control->get_message(file_hash, hash_value);
                 if(!hash_value.empty()){
                     // 存在的话就直接返回
-                    transfer_tcp_string(*current_socket, hash_value, kv_data);
+                    transfer_tcp_string(*current_socket, file_hash, hash_value, kv_data);
                 }else{
                     transfer_tcp_string(*current_socket, "bye:");
                 }
@@ -150,16 +150,23 @@ void peer::tcp_get_value_and_block(std::string file_hash, ba::ip::tcp::endpoint 
     transfer_tcp_string(current_socket, get_value_of_file_hash);
     content_info receive_buf;
     ba::read(current_socket, ba::buffer(&receive_buf, sizeof(content_info)));
+    std::cout << "block info is: " << receive_buf.content << std::endl;
+    leveldb_control->insert_key_value(receive_buf.key, receive_buf.content);
     if(receive_buf.message_type == kv_data){
         get_file_in_key(receive_buf.content, other_peer_server_endpoint);
         // 本机同步数据后，也该给自己的节点表里的节点依次发送增加文件的消息
-        // to do！
+        char cmd_add_file[256] = "";
+        sprintf(cmd_add_file, "addfile:%s", receive_buf.key);
+        udp_send_in_order(cmd_add_file);
     }else if(receive_buf.message_type == type_of_message){
         if(strncmp(receive_buf.content, "bye:", 4) == 0){
             current_socket.close();
+            std::cout << "close socket in bye!" << std::endl;
+            return;
         }
     }
-    
+    std::cout << "close socket in return" << std::endl;
+    return;
 }
 
 // 处理接收到的数据
@@ -573,6 +580,7 @@ void get_input(peer * pr)
         	cmd = strtok(NULL, " ");
         	char * game_version = strtok(NULL, " ");
             std::cout << cmd << " " << file << " " << game_name << " " << game_version << std::endl;
+            std::cout << "into plugin_add" << std::endl;
             add_file_contraler.set_initialize(file, game_name, game_version, pr->get_level_db());
             // 本地添加成功后，给自己本地存储的节点依次发送添加文件的命令
             
@@ -633,13 +641,14 @@ void peer::transfer_tcp_string(ba::ip::tcp::socket & client_socket, std::string 
     client_socket.write_some(ba::buffer(&message_info, sizeof(content_info)));
 }
 
-void peer::transfer_tcp_string(ba::ip::tcp::socket & client_socket, std::string message, enum_message_type type)
+void peer::transfer_tcp_string(ba::ip::tcp::socket & client_socket, std::string key, std::string message, enum_message_type type)
 {
     //ba::ip::tcp::socket client_socket(io_service_con);
     //client_socket.connect(target_endpoint);
     content_info message_info;
     message_info.message_type = type;
     message_info.content_size = message.length();
+    strcpy(message_info.key, key.c_str());
     strcpy(message_info.content, message.c_str());
     client_socket.write_some(ba::buffer(&message_info, sizeof(content_info)));
 }
