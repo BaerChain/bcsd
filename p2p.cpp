@@ -111,7 +111,7 @@ void peer::tcp_process_receive(ba::ip::tcp::socket * current_socket)
                 std::string file_hash(receive_content.content + 7, receive_content.content_size - 7);
                 std::string hash_value;
                 std::cout << "receive file hash is " << file_hash << std::endl;
-                leveldb_control.get_message(file_hash, hash_value);
+                leveldb_control->get_message(file_hash, hash_value);
                 if(!hash_value.empty()){
                     // 存在的话就直接返回
                     transfer_tcp_string(*current_socket, hash_value, kv_data);
@@ -278,7 +278,7 @@ void peer::process_receive(const boost::system::error_code &ec)
             // 检查当前结点是否含有此文件，没有就去请求对方发送给自己
             std::string file_hash(string_temp.c_str() + 8, string_temp.length() - 8);
             std::cout << "file hash is " << file_hash << std::endl;
-            leveldb_control.get_message(file_hash, json_content);
+            leveldb_control->get_message(file_hash, json_content);
             if(json_content.empty()){
                 std::cout << "current key is not exist!" << std::endl;
                 ba::ip::tcp::endpoint other_tcp_server_endpoint;
@@ -573,13 +573,13 @@ void get_input(peer * pr)
         	cmd = strtok(NULL, " ");
         	char * game_version = strtok(NULL, " ");
             std::cout << cmd << " " << file << " " << game_name << " " << game_version << std::endl;
-            //add_file_contraler.set_initialize(file, game_name, game_version);
+            add_file_contraler.set_initialize(file, game_name, game_version, pr->get_level_db());
             // 本地添加成功后，给自己本地存储的节点依次发送添加文件的命令
             
-            //char cmd_add_file[128] = "";
-            //sprintf(cmd_add_file, "addfile:%s", add_file_contraler.get_file_hash().c_str());
+            char cmd_add_file[128] = "";
+            sprintf(cmd_add_file, "addfile:%s", add_file_contraler.get_file_hash().c_str());
 
-            char cmd_add_file[128] = "addfile:aceb111";
+            //char cmd_add_file[128] = "addfile:aceb111";
             pr->udp_send_in_order(cmd_add_file);
         }else{
             if(client_socket.is_open()){
@@ -815,6 +815,11 @@ std::string peer::challenge(ba::ip::tcp::socket& _socket, const std::string _nod
 	ba::ip::tcp::endpoint current_point;
 	udp2tcp(list_node_endpoint[_nodeid], current_point);
 	return challenge(_socket, current_point, _order);
+}
+
+CFirstLevelDb* peer::get_level_db()
+{
+    return leveldb_control;
 }
 
 int peer::udp2tcp(ba::ip::udp::endpoint &src, ba::ip::tcp::endpoint &des)

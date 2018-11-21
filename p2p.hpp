@@ -104,6 +104,8 @@ class peer
     // tcp::endpoint 转 udp::endpoint
     int tcp2udp(ba::ip::tcp::endpoint &src, ba::ip::udp::endpoint &des);
 
+    CFirstLevelDb* get_level_db();
+
     // 把node：命令传输过来的节点id和对应的endpoint存到当前程序
     int insert_node(std::string &node_info);
     bfs::path store_path;

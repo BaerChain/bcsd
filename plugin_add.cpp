@@ -177,17 +177,14 @@ int plugin_add::cut_block()
     return i + 1;
 }
 
-int plugin_add::set_initialize(bfs::path add_file_path, std::string add_file_belong_game, std::string add_file_version)
+int plugin_add::set_initialize(std::string add_file_path, std::string add_file_belong_game, std::string add_file_version, CFirstLevelDb* leveldb_pointer)
 {
-    std::cout << "in set_initialize";
-    file_path = add_file_path;
-    game_name_string = add_file_belong_game;
-    game_version_string = add_file_version;
-    root_path = ".";
-    leveldb_path = "./local";
-    config_path = "../kv_config.json";
-    leveldb_control.init_db(leveldb_path.string().c_str(), config_path.string().c_str());
-    leveldb_control.put_new_file(_file_data);
+    std::cout << "in set_initialize" << std::endl;
+    _file_data.file_name = add_file_path;
+    _file_data.base_file_name = add_file_belong_game;
+    _file_data.base_file_version = add_file_version;
+    leveldb_control = leveldb_pointer;
+    leveldb_control->put_new_file(_file_data);
     std::cout << "file hash is:" << _file_data.file_hash << std::endl;
 
     return 0;
