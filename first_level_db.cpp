@@ -139,7 +139,7 @@ tools::ESaveErrorCode CFirstLevelDb::put_new_kvs(const tools::SFileData& file_da
             cout << " get value:"<< v_save_kv[i].value << " is empty and continue next!" << endl;
             continue;
         }
-		cout << "\n\n" << " key_str:" << key_str  << "\n temp_value:" << temp_value<< endl;
+		//cout << "\n\n" << " key_str:" << key_str  << "\n temp_value:" << temp_value<< endl;
         //已经获取到了 key - value
         //接下来必须全部成功 否则全部失败
         if (v_save_kv[i].is_repeat)
@@ -151,7 +151,7 @@ tools::ESaveErrorCode CFirstLevelDb::put_new_kvs(const tools::SFileData& file_da
             string value_str = "";
             status = db->Get(leveldb::ReadOptions(), key_str, &value_str);
             is_get_ok = true;
-			cout << "\n\n value_str:" << value_str << endl;
+			cout <<"key:"<<key_str<< "\nvalue_str:" << value_str << endl;
             if (status.ok() && !value_str.empty() && reader.parse(value_str, root))
             {
                 //判断是否重复
