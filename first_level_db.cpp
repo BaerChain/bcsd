@@ -228,8 +228,9 @@ tools::ESaveErrorCode CFirstLevelDb::put_new_file(tools::SFileData& file_data)
     string temp_value;
 
 	//添加flag
-	add_flag_hash(hash_ret);
-    status = db->Get(leveldb::ReadOptions(), hash_ret, &temp_value);
+    string hash_ret_temp = string(hash_ret);
+	add_flag_hash(hash_ret_temp);
+    status = db->Get(leveldb::ReadOptions(), hash_ret_temp, &temp_value);
 
     if (status.ok())
     {
