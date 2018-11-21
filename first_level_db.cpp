@@ -226,7 +226,10 @@ tools::ESaveErrorCode CFirstLevelDb::put_new_file(tools::SFileData& file_data)
     tools::sha_file(file_stream, hash_ret);
     file_data.file_hash = string(hash_ret);
     string temp_value;
+	cout << "start find same hsah..." << endl;
     status = db->Get(leveldb::ReadOptions(), hash_ret, &temp_value);
+	cout << "end find same hsah..." << endl;
+
     if (status.ok())
     {
         std::cout << "the file " << file_data.file_name << " is already exist!" << std::endl;
