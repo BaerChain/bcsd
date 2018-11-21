@@ -33,8 +33,8 @@ class CFirstLevelDb
 private:
     CFirstLevelDb();
 
-	CFirstLevelDb(const CFirstLevelDb&) {}
-	CFirstLevelDb& operator =(const CFirstLevelDb&) {  };
+	CFirstLevelDb(const CFirstLevelDb&);
+	CFirstLevelDb& operator =(const CFirstLevelDb&);
     int close_db();
 public:
 	~CFirstLevelDb();
@@ -75,7 +75,7 @@ private:
     Json::Reader reader;
     vector<SLevelSaveKV> v_save_kv;
 	
+	//考虑线程安全
 	//static pthread_mutex_t mutex;
-	//static CFirstLevelDb p_level_db; //单利模式
+	//static CFirstLevelDb p_level_db; //单利模式 
 };
-
