@@ -70,7 +70,7 @@ class peer
     void transfer_tcp_file(ba::ip::tcp::socket & client_socket, bfs::path file_path);
     void transfer_tcp_string(ba::ip::tcp::socket & client_socket, std::string message);
     void transfer_tcp_string(ba::ip::tcp::socket &client_socket, std::string message, ba::ip::tcp::endpoint &target_endpoint);
-    void transfer_tcp_string(ba::ip::tcp::socket & client_socket, std::string message, enum_message_type type);
+    void transfer_tcp_string(ba::ip::tcp::socket & client_socket, std::string key, std::string message, enum_message_type type);
 
     // 把接收的工作丢给系统
     void session_udp_receive();
@@ -103,6 +103,8 @@ class peer
     int udp2tcp(ba::ip::udp::endpoint &src, ba::ip::tcp::endpoint &des);
     // tcp::endpoint 转 udp::endpoint
     int tcp2udp(ba::ip::tcp::endpoint &src, ba::ip::udp::endpoint &des);
+
+    CFirstLevelDb* get_level_db();
 
     // 把node：命令传输过来的节点id和对应的endpoint存到当前程序
     int insert_node(std::string &node_info);
