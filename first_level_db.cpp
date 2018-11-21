@@ -139,7 +139,7 @@ tools::ESaveErrorCode CFirstLevelDb::put_new_kvs(const tools::SFileData& file_da
             cout << " get value:"<< v_save_kv[i].value << " is empty and continue next!" << endl;
             continue;
         }
-
+		cout << "\n\n" << " key_str:" << key_str  << "\n temp_value:" << temp_value<< endl;
         //已经获取到了 key - value
         //接下来必须全部成功 否则全部失败
         if (v_save_kv[i].is_repeat)
@@ -151,14 +151,19 @@ tools::ESaveErrorCode CFirstLevelDb::put_new_kvs(const tools::SFileData& file_da
             string value_str = "";
             status = db->Get(leveldb::ReadOptions(), key_str, &value_str);
             is_get_ok = true;
-            if (status.ok() && reader.parse(value_str, root))
+			cout << "\n\n value_str:" << value_str << endl;
+            if (status.ok() && !value_str.empty() && reader.parse(value_str, root))
             {
                 //判断是否重复
-                if (root.isMember(temp_value))
-                {
-                    is_get_ok = false;
-                    cout << " the value have repeat" << endl;
-                }
+				int value_size = root.size();
+				for (int i=0; i< value_size; i++)
+				{
+					if (temp_value == root[i].asString())
+					{
+						is_get_ok = false;
+						cout << " the value have repeat" << endl;
+					}
+				}
             }
             else
                 root.clear();
@@ -227,9 +232,10 @@ tools::ESaveErrorCode CFirstLevelDb::put_new_file(tools::SFileData& file_data)
     file_data.file_hash = string(hash_ret);
     string temp_value;
 
-	//添加flag
-	add_flag_hash(hash_ret);
-    status = db->Get(leveldb::ReadOptions(), hash_ret, &temp_value);
+	//添加flagv
+	string hash_ret_temp = string(hash_ret);
+	add_flag_hash(hash_ret_temp);
+    status = db->Get(leveldb::ReadOptions(), hash_ret_temp, &temp_value);
 
     if (status.ok())
     {
